@@ -550,7 +550,11 @@ main{position:relative;z-index:1}
 .mp-lbar{flex:none;height:46px;display:flex;align-items:center;gap:16px;padding:0 14px}
 .mp-lbar span{flex:1}
 .mp-lbar button,.ms-head button{width:24px;height:24px}
-.mp-lbody{flex:1;min-height:0;overflow:hidden;position:relative}
+.mp-lbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;position:relative;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mp-lbody::-webkit-scrollbar{display:none}
+@keyframes mpglow{0%,100%{box-shadow:0 0 0 0 rgba(8,102,255,.55)}50%{box-shadow:0 0 0 9px rgba(8,102,255,0)}}
+.fmt[data-kind="market"]:is([data-state="detail"],[data-state="pick"]) .mp-send,.fmt[data-kind="market"]:is([data-state="detail"],[data-state="pick"]) .mp-acts .pri,.fmt[data-kind="market"][data-state="reply"] .mp-qr span:first-child{animation:mpglow 1.6s ease-in-out infinite}
+.mp-acts .pri{cursor:pointer}
 .mp-fl{position:relative;width:100%;aspect-ratio:4/5;background:#0a2a5c}
 #f10 .media{background:radial-gradient(90% 60% at 50% 45%,#2a5aa8 0%,#0a2a5c 55%,#05142e 100%)}
 #f10:is([data-state="browse"],[data-state="open"]) .mi.full iframe.cfr{width:100%;height:auto;aspect-ratio:9/16;max-height:none;flex:none}
@@ -893,7 +897,7 @@ addEventListener(&#x27;message&#x27;,function(e){var d=e.data;if(d&amp;&amp;d.ty
         <div class="mp-fl"><div data-slot-detail style="position:absolute;inset:0"></div><span class="mp-hint"><i data-ic="tap"></i>Tap the Flick to try every variant</span></div>
         <div class="mp-var"><small>Variant</small><div class="mp-chips" data-mp-chips></div></div>
         <div class="mp-info"><h3 data-mp-title>Jacket</h3><div class="mp-price" data-mp-price>₹2,999</div><small>Listed 2 days ago in Bandra West, Mumbai · Delivery available</small></div>
-        <div class="mp-acts"><span class="pri"><i data-ic="chat"></i>Message</span><span><i data-ic="bookmark"></i>Save</span><span><i data-ic="share"></i>Share</span></div>
+        <div class="mp-acts"><span class="pri" data-mp-send2 role="button" tabindex="0"><i data-ic="chat"></i>Message</span><span><i data-ic="bookmark"></i>Save</span><span><i data-ic="share"></i>Share</span></div>
         <div class="mp-msg"><b><i data-ic="chat"></i>Send seller a message</b><div class="mp-in"><span data-mp-text>Hi, is this available?</span></div><button class="mp-send" data-mp-send>Send</button></div>
         <div class="mp-seller"><span class="mp-av" data-img="mp_seller" style="background:#5a4632"></span><span><b>Riya Sharma · Riya's Closet</b><small>★ 4.9 · Usually responds within an hour</small></span></div>
       </div>
@@ -1179,7 +1183,7 @@ function mpSetup(s) {
   mpChips(s);
   ch.addEventListener('click', e => { const b = e.target.closest('[data-vi]'); if (b) mpPick(s, MP.variants[+b.dataset.vi], true); });
   s.el.querySelector('[data-mp-open]').addEventListener('click', () => { if (s.state === 'browse') { stopTimers(s); mpOpen(s); } });
-  s.el.querySelector('[data-mp-send]').addEventListener('click', () => { stopTimers(s); mpSend(s); });
+  s.el.querySelectorAll('[data-mp-send],[data-mp-send2]').forEach(b => b.addEventListener('click', () => { stopTimers(s); mpSend(s); }));
   s.el.querySelector('[data-mp-order]').addEventListener('click', () => { stopTimers(s); mpOrder(s); });
   s.el.querySelector('[data-mp-back]').addEventListener('click', () => { stopTimers(s); mpBack(s); });
   s.el.querySelector('[data-mp-back2]').addEventListener('click', () => { stopTimers(s); s.el.querySelector('[data-mp-scroll]').scrollTop = 0; setState(s, 'detail'); });
@@ -1355,7 +1359,9 @@ const mh = document.querySelector('.mhead'), mprog = mh.querySelector('[data-mpr
 mprog.innerHTML = secs.map(() => '<span></span>').join('');
 let mIdx = 0;
 function mShow(i) {
-  mIdx = Math.max(0, Math.min(secs.length - 1, i));
+  const n = Math.max(0, Math.min(secs.length - 1, i));
+  if (current && n === mIdx && current === secs[n]) return;  // already showing it: past the first or last format, do nothing
+  mIdx = n;
   const t = MT[mIdx] || ['', secs[mIdx].name, 'var(--accent)'];
   mh.style.setProperty('--lc', t[2]);
   mh.querySelector('[data-mlane]').textContent = t[0];
@@ -1400,10 +1406,22 @@ addEventListener('keydown', e => {
   if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); mShow(mIdx - 1); }
 });
 let wAcc = 0, wLock = 0;
+function scrollerFor(el, dy) {
+  // nearest scrollable area under the cursor that can still move in this direction
+  for (; el && el !== document.body; el = el.parentElement) {
+    const cs = getComputedStyle(el);
+    if (!/(auto|scroll)/.test(cs.overflowY) || el.scrollHeight <= el.clientHeight + 1) continue;
+    if (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) return el;
+  }
+  return null;
+}
 addEventListener('wheel', e => {
   if (mq.matches) return;
-  const now = Date.now(); if (now < wLock) return;
-  wAcc += e.deltaY; if (Math.abs(wAcc) < 80) return;
+  const now = Date.now();
+  // content first: scroll the page inside the phone; switch format only after it reaches its end
+  if (scrollerFor(e.target, e.deltaY)) { wAcc = 0; wLock = now + 600; return; }
+  if (now < wLock) { wLock = now + 250; return; }
+  wAcc += e.deltaY; if (Math.abs(wAcc) < 120) return;
   mShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
 }, { passive: true });
 function modeChange() {
