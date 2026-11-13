@@ -298,7 +298,7 @@ main{position:relative;z-index:1}
 .st-row b{font-weight:600}
 .st-row span{opacity:.75}
 .st-row .x{margin-left:auto;display:flex;gap:14px}
-.fmt[data-state="s1"] .st-row.r0,.fmt[data-state="s2"] .st-row.r1,.fmt[data-state="leadin"]:not([data-ad="1"]) .st-row.r2,.fmt[data-state="leadin"][data-ad="1"] .st-row.r3,.st-row.always{display:flex}
+.fmt[data-state="s1"] .st-row.r0,.fmt[data-state="s2"] .st-row.r1,.fmt[data-state="ad"]:not([data-ad="1"]) .st-row.r2,.fmt[data-state="ad"][data-ad="1"] .st-row.r3,.st-row.always{display:flex}
 .st-reply{position:absolute;left:12px;right:12px;bottom:22px;display:flex;align-items:center;gap:14px}
 .st-reply .in{flex:1;height:44px;border-radius:22px;border:1px solid rgba(255,255,255,.55);display:flex;align-items:center;padding:0 18px;font-size:14px;color:rgba(255,255,255,.85)}
 .st-cta{position:absolute;left:0;right:0;bottom:70px;z-index:25;display:flex;justify-content:center;transition:opacity .3s;opacity:0}
@@ -651,6 +651,11 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 .fmt[data-state="play"] .media .mi:not(.full) flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
 .fmt[data-state="play"] .media .mi:not(.full) flam-embed[style*="1080/1080"]{width:min(100cqw, 100cqh)!important}
 #f2[data-ad="1"][data-state="play"] .ad0,#f2:not([data-ad="1"])[data-state="play"] .ad1{display:none!important}
+/* Instagram story ads: the Flick is the story itself, under the story bars, tappable in place */
+#f2[data-state="ad"] .media .mi{pointer-events:auto;height:100%;width:100%;box-sizing:border-box;padding:calc(var(--sbh) + 52px) 0 14px;display:flex;align-items:center;justify-content:center;container-type:size}
+#f2[data-state="ad"] .media .mi :is(.ad0,.ad1,.flick-lazy){display:contents}
+#f2[data-state="ad"] .media .mi flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
+#f2[data-ad="1"][data-state="ad"] .ad0,#f2:not([data-ad="1"])[data-state="ad"] .ad1{display:none!important}
 
 
 /* GRWM: Reels top bar and creator row around the Flick (also the swipe areas on phones) */
@@ -1114,14 +1119,14 @@ paintIcons(document);
 
 // ── journeys ──
 const ORDER = {
-  feed:['browse','scroll','leadin','play'], story:['leadin','play','s1','s2'], reward:['browse','offer','play','done'],
+  feed:['browse','scroll','leadin','play'], story:['ad','s1','s2'], reward:['browse','offer','play','done'],
   creator:['profile','tap','iab'], sticker:['story','tap','iab'], partner:['browse','scroll','tap','iab'], chat:['chat','msg','tap','iab','reply','confirm'],
   reelflick:['r1','live'],
   market:['browse','open','detail','pick','send','chat','reply','order','done']
 };
 const SCRIPT = {
   feed:[[700,'scroll'],[3300,'leadin'],[6300,'play']],
-  story:[[3500,'play']],
+  story:[],
   reward:[[2200,'offer'],[4800,'play']],
   creator:[[3400,'tap'],[4100,'iab']],
   sticker:[[3400,'tap'],[4100,'iab']],
@@ -1137,8 +1142,8 @@ const MP = { brand: 'Jacket Flick', title: 'Winter jackets · 3 styles', price: 
   { label: 'Mustard hooded', name: 'Mustard hooded jacket', img: 'jk_yellow', bg: '#6d522b' },
   { label: 'Checkered bomber', name: 'Checkered bomber jacket', img: 'jk_check', bg: '#2a5550' }
 ] };
-const PLAYABLE = { feed:1, story:1, reward:1 };
-const LIVE = { play:1, iab:1, live:1, detail:1, pick:1, send:1 };
+const PLAYABLE = { feed:1, reward:1 };
+const LIVE = { play:1, iab:1, live:1, detail:1, pick:1, send:1, ad:1 };
 const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
 const mq = matchMedia('(max-width:760px)');
 const CB = 'cubic-bezier(.2,.8,.2,1)';
@@ -1216,7 +1221,8 @@ function setState(s, st) {
   if (s.kind === 'story') {
     const n = st === 's1' ? 2 : st === 's2' ? 3 : (s.adIdx || 0);
     s.track.style.transform = 'translateX(-' + n * 100 + '%)';
-    if (st !== 'play') runBars(s, n, n <= 1 ? 3500 : 3000);
+    if (st !== 'play') runBars(s, n, n <= 1 ? STORY_AD_MS : 3000);
+    if (st === 'ad') storyNext(s);
     if (st === 's1') s.timers.push(setTimeout(() => { if (s.state === 's1') setState(s, 's2'); }, 3000));
   }
   if (s.kind === 'sticker') { if (st === 'story') runBars(s, 0, 9000); else freezeBars(s); }
@@ -1227,6 +1233,22 @@ function setState(s, st) {
   if (s.kind === 'reelflick') s.track.style.transform = 'translateY(-' + (st === 'live' ? 100 : 0) + '%)';
   if (!LIVE[st]) disengage(s, !!LIVE[prev]);
   s.steps.forEach(li => li.classList.toggle('on', idx(s, st) >= idx(s, li.dataset.at)));
+}
+// Instagram story ads: each Flick story runs like any story; while the viewer is playing with it, it waits
+// for them (up to 25 s more), then the next story follows
+const STORY_AD_MS = 12000;
+function storyNext(s) {
+  const ad = s.adIdx; s.holdUntil = 0;
+  s.timers.push(setTimeout(function next() {
+    if (s.state !== 'ad' || s.adIdx !== ad) return;
+    if (s.engaged) {
+      if (!s.holdUntil) s.holdUntil = Date.now() + 25000;
+      if (Date.now() < s.holdUntil) { s.timers.push(setTimeout(next, 1500)); return; }
+    }
+    disengage(s, true);   // the story moves on: its Flick goes quiet
+    if (!ad) { s.adIdx = 1; s.el.dataset.ad = '1'; setState(s, 'ad'); }
+    else setState(s, 's1');
+  }, STORY_AD_MS));
 }
 // Messenger: send the chosen variant back to the seller
 function reply(s) {
@@ -1489,7 +1511,7 @@ setInterval(() => { const s = secs[mIdx]; if (s) mountLazy(s); }, 150);
 function mountLazy(s) {
   s.el.querySelectorAll('.flick-lazy').forEach(ph => {
     const id = ph.dataset.fid;
-    const on = ph.querySelector('flam-embed'), shown = lazyShown(ph, s);
+    const on = ph.querySelector('flam-embed'), shown = lazyShown(ph, s) && !(s.kind === 'story' && s.state !== 'ad');   // story Flicks unload once the photo stories start
     if (on && !shown) { const f = on.querySelector('iframe'); try { if (f) f.src = 'about:blank'; } catch (x) {} on.remove(); return; }   // hidden again (story moved to its next ad): unload, so nothing plays unseen
     if (on || !shown) return;
     document.querySelectorAll('.flick-lazy flam-embed[data-fid="' + id + '"]').forEach(el => el.remove());   // one live copy per Flick
