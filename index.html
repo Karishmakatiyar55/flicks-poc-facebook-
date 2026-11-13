@@ -1569,6 +1569,7 @@ function scrollerFor(el, dy) {
   return null;
 }
 addEventListener('wheel', e => {
+  holdWhileMoving();
   if (mq.matches) return;
   const now = Date.now();
   // content first: scroll the page inside the phone; switch format only after it reaches its end
@@ -1605,6 +1606,7 @@ addEventListener('message', e => {
   const d = e.data; if (!d || d.type !== 'flick-gesture') return;
   if (typeof d.swipe === 'number') { gestureShow(mIdx + (d.swipe > 0 ? 1 : -1)); return; }
   if (typeof d.wheel === 'number' && !mq.matches) {
+    holdWhileMoving();
     const now = Date.now(); if (now < wLock) { wLock = now + 250; return; }
     wAcc += d.wheel; if (Math.abs(wAcc) < 120) return;
     gestureShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
@@ -1613,7 +1615,10 @@ addEventListener('message', e => {
 // until the viewer changes format once, the screen gives a gentle upward "peek" every few seconds
 let navd = false, navLock = 0;
 // one swipe = one format, whichever way it reaches the page (touch, wheel, a Flick handing on its scroll)
-function gestureShow(i) { if (Date.now() < navLock) return; userShow(i); }
+// A phone fling and a trackpad keep scrolling on their own for a second or two after the finger lifts. After a
+// format change, nothing moves again until that scrolling has died down, so one swipe never skips formats.
+function holdWhileMoving() { const now = Date.now(); if (now < navLock) navLock = Math.max(navLock, now + 380); }
+function gestureShow(i) { if (Date.now() < navLock) { holdWhileMoving(); return; } userShow(i); }
 function userShow(i) { navd = true; navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); roomDrag(0, true); }
 setInterval(() => {
   if (navd || !current || mIdx >= secs.length - 1) return;
@@ -1637,7 +1642,7 @@ roomHome(); addEventListener('load', roomHome); addEventListener('resize', roomH
 let roomT = null;
 addEventListener('scroll', () => {
   const d = scrollY - ROOM;
-  clearTimeout(roomT);
+  clearTimeout(roomT); holdWhileMoving();
   if (Date.now() < navLock) { roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 90); return; }
   roomDrag(d, false);
   if (Math.abs(d) >= 70) { gestureShow(mIdx + (d > 0 ? 1 : -1)); roomT = setTimeout(roomHome, 90); return; }
