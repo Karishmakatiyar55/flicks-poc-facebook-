@@ -1234,22 +1234,22 @@ function setState(s, st) {
   if (!LIVE[st]) disengage(s, !!LIVE[prev]);
   s.steps.forEach(li => li.classList.toggle('on', idx(s, st) >= idx(s, li.dataset.at)));
 }
-// Instagram story ads: each Flick story runs like any story; while the viewer is playing with it, it waits
-// for them (up to 25 s more), then the next story follows
-const STORY_AD_MS = 12000;
+// Instagram story ads: each Flick story runs like any story. Its timeline always runs out and the next story
+// follows; a tap on the story outside the Flick moves on (left third: back), the way Instagram stories work.
+// Taps inside the Flick stay with the Flick (that is where the variants are).
+const STORY_AD_MS = 15000;
 function storyNext(s) {
-  const ad = s.adIdx; s.holdUntil = 0;
-  s.timers.push(setTimeout(function next() {
-    if (s.state !== 'ad' || s.adIdx !== ad) return;
-    if (s.engaged) {
-      if (!s.holdUntil) s.holdUntil = Date.now() + 25000;
-      if (Date.now() < s.holdUntil) { s.timers.push(setTimeout(next, 1500)); return; }
-    }
-    disengage(s, true);   // the story moves on: its Flick goes quiet
-    if (!ad) { s.adIdx = 1; s.el.dataset.ad = '1'; setState(s, 'ad'); }
-    else setState(s, 's1');
-  }, STORY_AD_MS));
+  const ad = s.adIdx;
+  s.timers.push(setTimeout(() => { if (s.state === 'ad' && s.adIdx === ad) storyGo(s, ad + 1); }, STORY_AD_MS));
 }
+function storyGo(s, n) {
+  n = Math.max(0, Math.min(3, n));
+  stopTimers(s);
+  disengage(s, true);   // the Flick that was on goes quiet
+  if (n < 2) { s.adIdx = n; s.el.dataset.ad = String(n); setState(s, 'ad'); }
+  else setState(s, n === 2 ? 's1' : 's2');
+}
+function storyPos(s) { return s.state === 'ad' ? (s.adIdx || 0) : s.state === 's1' ? 2 : 3; }
 // Messenger: send the chosen variant back to the seller
 function reply(s) {
   if (s.state !== 'iab') return;
@@ -1449,6 +1449,11 @@ function closeLink(s) {
 }
 
 secs.forEach(s => {
+  if (s.kind === 'story') s.screen.addEventListener('click', e => {
+    if (e.target.closest('iframe, button, a, input')) return;
+    const r = s.screen.getBoundingClientRect(), left = (e.clientX - r.left) < r.width / 3;
+    storyGo(s, storyPos(s) + (left ? -1 : 1));
+  });
   s.media.addEventListener('click', () => {
     if (s.kind === 'feed' && s.state !== 'play') play(s);
     if (s.kind === 'story' && s.state === 'leadin') play(s);
