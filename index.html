@@ -525,7 +525,7 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 .mprog span{flex:1;height:2px;border-radius:1px;background:rgba(255,226,210,.12)}
 .mprog span.on{background:var(--lc,var(--accent))}
 
-/* Facebook Feed playable: ad stays 9:16 and centred on a gradient */
+/* Facebook Feed post: the Gap creative is square and fills the post picture */
 #f1 .media{background:radial-gradient(90% 55% at 50% 45%,#2a5aa8 0%,#0a2a5c 55%,#05142e 100%)}
 /* the Gap ad is a square creative: frame it square, full width, centred top to bottom */
 #f1 .mi.full{box-sizing:border-box;padding:0}
@@ -652,6 +652,7 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 .fmt[data-state="play"] .media .mi:not(.full) flam-embed[style*="1080/1080"]{width:min(100cqw, 100cqh)!important}
 #f2[data-ad="1"][data-state="play"] .ad0,#f2:not([data-ad="1"])[data-state="play"] .ad1{display:none!important}
 /* Instagram story ads: the Flick is the story itself, under the story bars, tappable in place */
+#f1[data-state="ad"] .media .mi{pointer-events:auto}
 #f2[data-state="ad"] .media .mi{pointer-events:auto;height:100%;width:100%;box-sizing:border-box;padding:calc(var(--sbh) + 52px) 0 14px;display:flex;align-items:center;justify-content:center;container-type:size}
 #f2[data-state="ad"] .media .mi :is(.ad0,.ad1,.flick-lazy){display:contents}
 #f2[data-state="ad"] .media .mi flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
@@ -749,15 +750,15 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 
 
 <!-- ═════════ 01 FACEBOOK FEED PLAYABLE ═════════ -->
-<section class="fmt" id="f1" data-kind="feed" data-name="01 · Facebook Feed playable" data-state="browse">
+<section class="fmt" id="f1" data-kind="feed" data-name="01 · Facebook Feed" data-state="browse">
  <div class="fmt-in">
   <div class="copy">
     <nav class="fmtlist" aria-label="Formats"></nav>
-    <div class="eyebrow"><b>01</b><span class="rule"></span><span>Playable · Facebook Feed</span></div>
-    <h2>A post that <span class="serif">plays.</span></h2>
-    <p class="one">Lead-in in Feed. One tap, the Flick goes full screen.</p>
-    <div class="tags"><span class="tag ">Gap</span><span class="tag ">Pays on installs</span></div>
-    <ol class="steps"><li data-at="scroll">Scroll</li><li data-at="leadin">Lead-in</li><li data-at="play">Play</li></ol>
+    <div class="eyebrow"><b>01</b><span class="rule"></span><span>Facebook Feed</span></div>
+    <h2>The post <span class="serif">is the Flick.</span></h2>
+    <p class="one">A Gap post in Feed. Swap tonight's fit right inside the post.</p>
+    <div class="tags"><span class="tag ">Gap</span></div>
+    <ol class="steps"><li data-at="scroll">Scroll</li><li data-at="ad">Flick post</li></ol>
     <button class="replay" data-replay><i data-ic="replay"></i>Replay</button>
   </div>
   <div class="stage"><div class="phone"><div class="sw">
@@ -785,9 +786,8 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
       </article>
       <article class="fb-box" data-ad>
         <div class="fb-ph"><span class="av" style="background:#0a2a5c">G</span><span class="nm"><b>Gap</b><small>Sponsored · <i data-ic="globe"></i></small></span><i data-ic="more"></i></div>
-        <div class="fb-text">Style tonight's fit in 30 seconds. Tap to try it right here in Feed.</div>
+        <div class="fb-text">Tonight's fit, your way. Swap the pieces right here.</div>
         <div data-slot style="aspect-ratio:1/1;width:100%"></div>
-        <div class="fb-cta"><div><small>Playable ad</small><strong>Try it before you install</strong></div><button data-try>Try now</button></div>
         <div class="fb-react"><span class="r"><b><i data-ic="like"></i></b>1.2K</span><span>88 comments · 41 shares</span></div>
         <div class="fb-acts"><span><i data-ic="like"></i>Like</span><span><i data-ic="comment"></i>Comment</span><span><i data-ic="share"></i>Share</span></div>
       </article>
@@ -800,7 +800,7 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
     </div>
     <nav class="tabbar fb-tabs"><i data-ic="home" class="on"></i><i data-ic="video"></i><i data-ic="users"></i><i data-ic="store"></i><i data-ic="bell"></i><i data-ic="menu"></i></nav>
     <div class="media" data-media style="--tint:#0a2a5c"><div class="mi full">
-      <iframe class="cfr" title="Gap playable ad" allow="fullscreen" allowtransparency="true" style="border:0;display:block;background:transparent" srcdoc="&lt;!doctype html&gt;
+      <iframe class="cfr" title="Gap ad" allow="fullscreen" allowtransparency="true" style="border:0;display:block;background:transparent" srcdoc="&lt;!doctype html&gt;
 &lt;meta charset=utf-8&gt;
 &lt;meta name=ad.orientation content=portrait,landscape&gt;
 &lt;meta name=color-scheme content=dark&gt;
@@ -827,9 +827,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
 
 &lt;script&gt;var ExitApi=window.ExitApi||{exit:function(){}},clickTag=&quot;${CLICK_URL_UNESC}&quot;;&lt;/script&gt;
 &lt;script src=https://native-ads.appless.workers.dev/6a9eb4cd93e71f3ec92010f1_im75ys/ad.js&gt;&lt;/script&gt;"></iframe>
-    </div><span class="tap"><i data-ic="play"></i>Tap to try</span></div>
-    <div class="pc"><div class="pc-top"><span class="pc-tag">Playable ad</span><button class="pc-close" data-close aria-label="Close playable"><span data-count></span></button></div>
-      <div class="pc-cta"><span class="pc-icon" style="background:#0a2a5c">G</span><span class="pc-txt"><b>Gap</b><small><i data-ic="star"></i>4.7 · Shopping</small></span><span class="pc-btn">Install</span></div></div>
+    </div></div>
     <div class="island"></div>
    </div>
   </div></div></div>
@@ -841,7 +839,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
  <div class="fmt-in">
   <div class="copy">
     <nav class="fmtlist" aria-label="Formats"></nav>
-    <div class="eyebrow"><b>02</b><span class="rule"></span><span>Playable · Audience Network</span></div>
+    <div class="eyebrow"><b>02</b><span class="rule"></span><span>Rewarded · Audience Network</span></div>
     <h2>Play the look, <span class="serif">earn a hint.</span></h2>
     <p class="one">A partner app trades a reward for 12 seconds of play.</p>
     <div class="tags"><span class="tag ">Eyeshadow Swap</span><span class="tag ">Rewarded</span><span class="tag ">Pays on installs</span></div>
@@ -1119,13 +1117,13 @@ paintIcons(document);
 
 // ── journeys ──
 const ORDER = {
-  feed:['browse','scroll','leadin','play'], story:['ad','s1','s2'], reward:['browse','offer','play','done'],
+  feed:['browse','scroll','ad'], story:['ad'], reward:['browse','offer','play','done'],
   creator:['profile','tap','iab'], sticker:['story','tap','iab'], partner:['browse','scroll','tap','iab'], chat:['chat','msg','tap','iab','reply','confirm'],
   reelflick:['r1','live'],
   market:['browse','open','detail','pick','send','chat','reply','order','done']
 };
 const SCRIPT = {
-  feed:[[700,'scroll'],[3300,'leadin'],[6300,'play']],
+  feed:[[700,'scroll'],[3300,'ad']],
   story:[],
   reward:[[2200,'offer'],[4800,'play']],
   creator:[[3400,'tap'],[4100,'iab']],
@@ -1142,7 +1140,7 @@ const MP = { brand: 'Jacket Flick', title: 'Winter jackets · 3 styles', price: 
   { label: 'Mustard hooded', name: 'Mustard hooded jacket', img: 'jk_yellow', bg: '#6d522b' },
   { label: 'Checkered bomber', name: 'Checkered bomber jacket', img: 'jk_check', bg: '#2a5550' }
 ] };
-const PLAYABLE = { feed:1, reward:1 };
+const PLAYABLE = { reward:1 };
 const LIVE = { play:1, iab:1, live:1, detail:1, pick:1, send:1, ad:1 };
 const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
 const mq = matchMedia('(max-width:760px)');
@@ -1217,6 +1215,7 @@ function setState(s, st) {
   if (s.scroller && s.ad) {
     if (st === 'browse') { cancelAnimationFrame(s.tween); s.scroller.scrollTop = 0; }
     if (st === 'scroll') tweenScroll(s, feedTarget(s), 2400);
+    if (st === 'ad') tweenScroll(s, feedTarget(s), 500);
   }
   if (s.kind === 'story') {
     const n = st === 's1' ? 2 : st === 's2' ? 3 : (s.adIdx || 0);
@@ -1240,14 +1239,13 @@ function setState(s, st) {
 const STORY_AD_MS = 15000;
 function storyNext(s) {
   const ad = s.adIdx;
-  s.timers.push(setTimeout(() => { if (s.state === 'ad' && s.adIdx === ad) storyGo(s, ad + 1); }, STORY_AD_MS));
+  s.timers.push(setTimeout(() => { if (s.state === 'ad' && s.adIdx === ad) storyGo(s, ad ? 0 : 1); }, STORY_AD_MS));   // two Flick stories, round and round
 }
 function storyGo(s, n) {
-  n = Math.max(0, Math.min(3, n));
+  n = n > 1 ? 0 : Math.max(0, n);
   stopTimers(s);
   disengage(s, true);   // the Flick that was on goes quiet
-  if (n < 2) { s.adIdx = n; s.el.dataset.ad = String(n); setState(s, 'ad'); }
-  else setState(s, n === 2 ? 's1' : 's2');
+  s.adIdx = n; s.el.dataset.ad = String(n); setState(s, 'ad');
 }
 function storyPos(s) { return s.state === 'ad' ? (s.adIdx || 0) : s.state === 's1' ? 2 : 3; }
 // Messenger: send the chosen variant back to the seller
@@ -1496,8 +1494,8 @@ secs.forEach(s => io.observe(s.el));
 
 // phone: one demo per page, chosen with the header arrows or a sideways swipe on the header
 const MT = [
-  ['Playable ad','Facebook Feed','var(--accent)'],
-  ['Playable ad','Audience Network · Rewarded','var(--accent)'],
+  ['Flick post','Facebook Feed','var(--accent)'],
+  ['Rewarded ad','Audience Network · Rewarded','var(--accent)'],
   ['In-app link','Messenger · reply with pick','var(--link)'],
   ['Commerce','Facebook Marketplace','var(--warn)']
 ];
