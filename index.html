@@ -1034,14 +1034,14 @@ paintIcons(document);
 
 // ── journeys ──
 const ORDER = {
-  feed:['browse','scroll','leadin','play'], story:['s1','s2','leadin','play'], reward:['browse','offer','play','done'],
+  feed:['browse','scroll','leadin','play'], story:['leadin','play','s1','s2'], reward:['browse','offer','play','done'],
   creator:['reel','profile','tap','iab'], sticker:['story','tap','iab'], partner:['browse','scroll','tap','iab'], chat:['chat','msg','tap','iab','reply','confirm'],
   reelflick:['r1','live'],
   market:['browse','open','detail','pick','send','chat','reply','order','done']
 };
 const SCRIPT = {
   feed:[[700,'scroll'],[3300,'leadin'],[6300,'play']],
-  story:[[2800,'s2'],[5600,'leadin'],[8800,'play']],
+  story:[[3500,'play']],
   reward:[[2200,'offer'],[4800,'play']],
   creator:[[3600,'profile'],[6000,'tap'],[6700,'iab']],
   sticker:[[3400,'tap'],[4100,'iab']],
@@ -1133,9 +1133,10 @@ function setState(s, st) {
     if (st === 'scroll') tweenScroll(s, feedTarget(s), 2400);
   }
   if (s.kind === 'story') {
-    const n = st === 's1' ? 0 : st === 's2' ? 1 : 2;
+    const n = st === 's1' ? 1 : st === 's2' ? 2 : 0;
     s.track.style.transform = 'translateX(-' + n * 100 + '%)';
-    if (st !== 'play') runBars(s, n, n === 2 ? 9000 : 2800);
+    if (st !== 'play') runBars(s, n, n === 0 ? 3500 : 3000);
+    if (st === 's1') s.timers.push(setTimeout(() => { if (s.state === 's1') setState(s, 's2'); }, 3000));
   }
   if (s.kind === 'sticker') { if (st === 'story') runBars(s, 0, 9000); else freezeBars(s); }
   if (s.kind === 'chat') {
@@ -1280,6 +1281,12 @@ function play(s) {
   place(s, { x: 0, y: 0, w: s.screen.offsetWidth, h: s.screen.offsetHeight }, null);
   setState(s, 'play');
   setTimeout(() => { s.anim = false; s.media.style.transition = ''; }, 600);
+  // Stories: if nobody is playing, the demo closes the playable so the remaining stories follow
+  if (s.kind === 'story') s.timers.push(setTimeout(function autoClose() {
+    if (s.state !== 'play') return;
+    if (s.engaged || !s.canClose) { s.timers.push(setTimeout(autoClose, 1500)); return; }
+    closePlay(s);
+  }, 8000));
   const reward = s.kind === 'reward';
   let n = reward ? 12 : 4;
   s.canClose = false;
@@ -1302,7 +1309,7 @@ function play(s) {
 function closePlay(s) {
   if (s.state !== 'play' || !s.canClose) return;
   clearInterval(s.tick);
-  const next = s.kind === 'reward' ? 'done' : 'leadin';
+  const next = s.kind === 'reward' ? 'done' : s.kind === 'story' ? 's1' : 'leadin';
   s.anim = true; s.media.style.transition = GEO;
   setState(s, next);
   if (next === 'leadin') { const [r, clip] = slotGeo(s); place(s, r, clip); }
