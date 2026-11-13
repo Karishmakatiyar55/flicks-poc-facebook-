@@ -498,7 +498,23 @@ main{position:relative;z-index:1}
   .copy h2{font-size:clamp(28px,min(3vw,5vh),44px)!important}
   .copy .eyebrow{display:none}
 }
-@media (max-width:760px){ .fmtlist{display:none} }
+@media (max-width:760px){
+  .fmtlist{display:none}
+  html body .mhead{display:none!important}
+  :root{--mh:env(safe-area-inset-top,0px)!important}
+}
+/* swipe hint (phones): dots on the right edge, the current one longer; a soft chevron bobs for a few seconds */
+.swipe-dots{display:none}
+@media (max-width:760px){
+  .swipe-dots{position:fixed;right:5px;top:50%;transform:translateY(-50%);z-index:90;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none}
+  .swipe-dots span{width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.25);transition:height .35s cubic-bezier(.2,.8,.2,1),background .35s}
+  .swipe-dots span.on{height:16px;background:#fff}
+  .swipe-dots i{margin-top:6px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
+  .swipe-dots i svg{width:12px;height:12px}
+  .swipe-dots.nudge i{opacity:.9;animation:hintUp 1.4s ease-in-out infinite}
+  @keyframes hintUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+}
+
 
 /* phone pager header (hidden on desktop) */
 .mhead{display:none;position:fixed;top:0;left:0;right:0;z-index:80;font-family:var(--f-page);height:var(--mh,60px);box-sizing:border-box;padding:env(safe-area-inset-top,0px) 8px 0;align-items:center;gap:8px;background:var(--bg);touch-action:pan-y}
@@ -629,6 +645,16 @@ main{position:relative;z-index:1}
 .mp-badge{--c:255 255 255;animation:cue 2.2s cubic-bezier(.2,.7,.2,1) infinite!important}
 .fmt[data-kind="market"][data-state="browse"] .mp-spon .mp-ph{animation:none}
 .pc-close:has(i[data-ic]){--c:255 255 255;animation:cue 2.6s cubic-bezier(.2,.7,.2,1) infinite}
+
+
+/* the phone frame never scrolls (a focused or tapped element must not shift the app screen) */
+.phone,.sw,.screen{overflow:clip}
+/* playable open: the Flick sits whole between the "Playable ad" tag and the install card */
+.fmt[data-state="play"] .media .mi:not(.full){height:100%;width:100%;box-sizing:border-box;padding:calc(var(--sbh) + 52px) 0 94px;display:flex;align-items:center;justify-content:center;container-type:size}
+.fmt[data-state="play"] .media .mi:not(.full) :is(.ad0,.ad1,.flick-lazy){display:contents}
+.fmt[data-state="play"] .media .mi:not(.full) flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
+.fmt[data-state="play"] .media .mi:not(.full) flam-embed[style*="1080/1080"]{width:min(100cqw, 100cqh)!important}
+#f2[data-ad="1"][data-state="play"] .ad0,#f2:not([data-ad="1"])[data-state="play"] .ad1{display:none!important}
 
 /* closing */
 .closing{max-width:1240px;margin:0 auto;padding:120px 32px 60px;display:flex;flex-direction:column;gap:28px}
@@ -1469,6 +1495,12 @@ function mShow(i) {
   secs.forEach((s, j) => park(s, j === mIdx));
   activate(null); activate(secs[mIdx]);
   document.querySelectorAll('.fmtlist button').forEach(b => b.classList.toggle('on', +b.dataset.go === mIdx));
+  if (window.swipeDots) {
+    swipeDots.querySelectorAll('span').forEach((d, j) => d.classList.toggle('on', j === mIdx));
+    clearTimeout(swipeDots._t);
+    swipeDots.classList.toggle('nudge', mIdx < secs.length - 1);
+    swipeDots._t = setTimeout(() => swipeDots.classList.remove('nudge'), 3200);
+  }
 }
 mh.querySelector('[data-mprev]').addEventListener('click', () => mShow(mIdx - 1));
 mh.querySelector('[data-mnext]').addEventListener('click', () => mShow(mIdx + 1));
@@ -1551,6 +1583,9 @@ addEventListener('message', e => {
     mShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
   }
 });
+const swipeDots = document.createElement('div'); swipeDots.className = 'swipe-dots'; swipeDots.setAttribute('aria-hidden', 'true');
+swipeDots.innerHTML = secs.map(() => '<span></span>').join('') + '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></i>';
+document.body.appendChild(swipeDots); window.swipeDots = swipeDots;
 function modeChange() {
   mShow(current ? current.i : mIdx);
 }
