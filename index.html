@@ -510,6 +510,25 @@ main{position:relative;z-index:1}
 html.room,html.room body{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;scroll-behavior:auto!important;overscroll-behavior:none!important;scrollbar-width:none}
 html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 .scroll-room{height:calc(100vh + 1400px);pointer-events:none}
+/* scroll cue */
+.scroll-cue{position:fixed;z-index:9200;pointer-events:none;opacity:0;transition:opacity .6s ease;display:flex;flex-direction:column;align-items:center;gap:10px;transform:translate(0,-50%);color:rgba(244,231,224,.78)}
+.scroll-cue.on{opacity:1}
+.scroll-cue .sc-phone{display:none}
+.sc-mouse{position:relative;width:22px;height:34px;border:1.6px solid currentColor;border-radius:12px;box-sizing:border-box}
+.sc-wheel{position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:currentColor;animation:scWheel 1.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes scWheel{0%{transform:translateY(0);opacity:0}20%{opacity:1}70%{transform:translateY(9px);opacity:0}100%{opacity:0}}
+.sc-word{font:600 10px/1 var(--f-page,inherit);letter-spacing:.24em;text-transform:uppercase;writing-mode:vertical-rl;color:rgba(244,231,224,.55)}
+@media (max-width:760px){
+  .scroll-cue{left:50%!important;top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);transform:translateX(-50%);color:#fff}
+  .scroll-cue .sc-mouse,.scroll-cue .sc-word{display:none}
+  .scroll-cue .sc-phone{display:block;position:relative;width:38px;height:62px;border-radius:19px;background:rgba(12,9,8,.42);box-shadow:0 0 0 .5px rgba(255,255,255,.22),0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .sc-track{position:absolute;left:50%;top:14px;bottom:14px;width:2px;margin-left:-1px;border-radius:1px;background:linear-gradient(to top,rgba(255,255,255,0),rgba(255,255,255,.35))}
+  .sc-dot{position:absolute;left:50%;width:12px;height:12px;margin-left:-6px;bottom:10px;border-radius:50%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.7);animation:scFinger 1.9s cubic-bezier(.45,0,.2,1) infinite}
+  .sc-chev{position:absolute;left:50%;top:-20px;width:18px;height:18px;margin-left:-9px;color:rgba(255,255,255,.9);animation:scChev 1.9s ease-in-out infinite;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+  @keyframes scFinger{0%{transform:translateY(0) scale(.6);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}65%{transform:translateY(-30px) scale(1);opacity:1}85%,100%{transform:translateY(-34px) scale(.6);opacity:0}}
+  @keyframes scChev{0%,30%{transform:translateY(4px);opacity:0}65%{transform:translateY(0);opacity:1}100%{transform:translateY(-4px);opacity:0}}
+}
+
 
 
 /* phone pager header (hidden on desktop) */
@@ -1637,12 +1656,29 @@ addEventListener('message', e => {
 });
 // until the viewer changes format once, the screen gives a gentle upward "peek" every few seconds
 let navd = false, navLock = 0;
+// Scroll cue: a finger swiping up on a phone, a mouse wheel turning on a laptop. It shows until the viewer has
+// moved to another format, and comes back after 20 s with no move, so nobody is left wondering what to do.
+const cue = document.createElement('div'); cue.className = 'scroll-cue'; cue.setAttribute('aria-hidden', 'true');
+cue.innerHTML = '<span class="sc-phone"><i class="sc-track"></i><i class="sc-dot"></i><svg class="sc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14l5-5 5 5"/></svg></span>'
+  + '<span class="sc-mouse"><i class="sc-wheel"></i></span><b class="sc-word">Scroll</b>';
+document.body.appendChild(cue);
+let cueLast = Date.now(), cueGeo = '';
+function cueOn() { return !navd || Date.now() - cueLast > 20000; }
+(function cueFollow() {
+  const show = cueOn() && current && mIdx < secs.length - 1 + (navd ? 1 : 0);
+  cue.classList.toggle('on', !!show);
+  if (show && !mq.matches) {   // laptop: beside the phone, on its right
+    const ph = current.el.querySelector('.phone'); if (ph) { const r = ph.getBoundingClientRect(), g = Math.round(r.right + 34) + ',' + Math.round(r.top + r.height / 2);
+      if (g !== cueGeo) { cueGeo = g; cue.style.left = Math.round(r.right + 34) + 'px'; cue.style.top = Math.round(r.top + r.height / 2) + 'px'; } }
+  }
+  requestAnimationFrame(cueFollow);
+})();
 // one swipe = one format, whichever way it reaches the page (touch, wheel, a Flick handing on its scroll)
 // A phone fling and a trackpad keep scrolling on their own for a second or two after the finger lifts. After a
 // format change, nothing moves again until that scrolling has died down, so one swipe never skips formats.
 function holdWhileMoving() { const now = Date.now(); if (now < navLock) navLock = Math.max(navLock, now + 380); }
 function gestureShow(i) { if (Date.now() < navLock) { holdWhileMoving(); return; } userShow(i); }
-function userShow(i) { navd = true; navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); roomDrag(0, true); }
+function userShow(i) { navd = true; cueLast = Date.now(); navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); roomDrag(0, true); }
 setInterval(() => {
   if (navd || !current || mIdx >= secs.length - 1) return;
   current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
