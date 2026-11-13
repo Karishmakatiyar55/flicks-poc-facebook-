@@ -672,6 +672,26 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 #f2[data-ad="1"][data-state="play"] .ad0,#f2:not([data-ad="1"])[data-state="play"] .ad1{display:none!important}
 /* Instagram story ads: the Flick is the story itself, under the story bars, tappable in place */
 #f1[data-state="ad"] .media .mi{pointer-events:auto}
+/* Instagram launch: splash, then the home feed; tapping the Gucci story opens it */
+.ig-launch{position:absolute;inset:0;z-index:40;transition:opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1);transform-origin:var(--ox,30%) var(--oy,18%)}
+.fmt:not([data-state="splash"]):not([data-state="home"]) .ig-launch{opacity:0;transform:scale(1.06);pointer-events:none}
+.ig-splash{position:absolute;inset:0;z-index:2;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease}
+.igs-logo{width:84px;height:84px;object-fit:contain}
+.igs-from{position:absolute;left:50%;bottom:calc(46px + env(safe-area-inset-bottom,0px));width:96px;transform:translateX(-50%)}
+.fmt:not([data-state="splash"]) .ig-splash{opacity:0;pointer-events:none}
+.fmt[data-state="splash"] .sb{color:#111}
+.ig-home{position:absolute;inset:0;background:#000;color:#f5f5f5;display:flex;flex-direction:column;padding-top:var(--sbh)}
+.igh-body{flex:1;min-height:0;overflow:hidden}
+.ig-home .ig-stories span b.brand{background:conic-gradient(from 210deg,#FEDA75,#FA7E1E,#D62976,#962FBF,#4F5BD5,#FEDA75);position:relative}
+.ig-home .ig-stories span b.brand::after{background:#000 var(--g) center/cover}
+.ig-home .ig-stories span b.brand em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 24px/1 var(--f-page,inherit);font-style:normal;color:#f3e3c3;z-index:1}
+.ig-home .ig-ph .av{background:var(--g) center/cover!important}
+.ig-home .ig-stories span.yours b{background:none}
+.ig-home .ig-stories span.yours b::after{border-color:#000}
+.ig-home .ig-stories .gucci{cursor:pointer;position:relative}
+.fmt[data-state="home"] .ig-stories .gucci b{animation:igPulse 1.8s cubic-bezier(.2,.7,.2,1) infinite}
+@keyframes igPulse{0%{box-shadow:0 0 0 0 rgba(250,126,30,.55)}70%{box-shadow:0 0 0 12px rgba(250,126,30,0)}100%{box-shadow:0 0 0 0 rgba(250,126,30,0)}}
+.fmt[data-state="splash"] .st-top,.fmt[data-state="home"] .st-top,.fmt[data-state="splash"] .media,.fmt[data-state="home"] .media{opacity:0}
 #f2[data-state="ad"] .media .mi{pointer-events:auto;height:100%;width:100%;box-sizing:border-box;padding:calc(var(--sbh) + 52px) 0 14px;display:flex;align-items:center;justify-content:center;container-type:size}
 #f2[data-state="ad"] .media .mi :is(.ad0,.ad1,.flick-lazy){display:contents}
 #f2[data-state="ad"] .media .mi flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
@@ -1136,14 +1156,14 @@ paintIcons(document);
 
 // ── journeys ──
 const ORDER = {
-  feed:['browse','scroll','ad'], story:['ad'], reward:['browse','offer','play','done'],
+  feed:['browse','scroll','ad'], story:['splash','home','ad'], reward:['browse','offer','play','done'],
   creator:['profile','tap','iab'], sticker:['story','tap','iab'], partner:['browse','scroll','tap','iab'], chat:['chat','msg','tap','iab','reply','confirm'],
   reelflick:['r1','live'],
   market:['browse','open','detail','pick','send','chat','reply','order','done']
 };
 const SCRIPT = {
   feed:[[700,'scroll'],[3300,'ad']],
-  story:[],
+  story:[[1700,'home']],
   reward:[[2200,'offer'],[4800,'play']],
   creator:[[3400,'tap'],[4100,'iab']],
   sticker:[[3400,'tap'],[4100,'iab']],
@@ -1241,6 +1261,7 @@ function setState(s, st) {
     s.track.style.transform = 'translateX(-' + n * 100 + '%)';
     if (st !== 'play') runBars(s, n, n <= 1 ? STORY_AD_MS : 3000);
     if (st === 'ad') storyNext(s);
+    if (st === 'home') s.timers.push(setTimeout(() => { if (s.state === 'home') openStory(s); }, 4200));   // nobody tapped: the demo taps the Gucci story
     if (st === 's1') s.timers.push(setTimeout(() => { if (s.state === 's1') setState(s, 's2'); }, 3000));
   }
   if (s.kind === 'sticker') { if (st === 'story') runBars(s, 0, 9000); else freezeBars(s); }
@@ -1265,6 +1286,12 @@ function storyGo(s, n) {
   stopTimers(s);
   disengage(s, true);   // the Flick that was on goes quiet
   s.adIdx = n; s.el.dataset.ad = String(n); setState(s, 'ad');
+}
+function openStory(s) {
+  if (s.state !== 'home') return;
+  const g = s.el.querySelector('[data-open-story] b'), l = s.el.querySelector('[data-launch]');
+  if (g && l) { const a = g.getBoundingClientRect(), b = l.getBoundingClientRect(); l.style.setProperty('--ox', ((a.left + a.width / 2 - b.left) / b.width * 100).toFixed(1) + '%'); l.style.setProperty('--oy', ((a.top + a.height / 2 - b.top) / b.height * 100).toFixed(1) + '%'); }
+  stopTimers(s); s.adIdx = 0; s.el.dataset.ad = '0'; setState(s, 'ad');
 }
 function storyPos(s) { return s.state === 'ad' ? (s.adIdx || 0) : s.state === 's1' ? 2 : 3; }
 // Messenger: send the chosen variant back to the seller
@@ -1466,8 +1493,9 @@ function closeLink(s) {
 }
 
 secs.forEach(s => {
+  if (s.kind === 'story') s.el.querySelector('[data-open-story]')?.addEventListener('click', e => { e.stopPropagation(); openStory(s); });
   if (s.kind === 'story') s.screen.addEventListener('click', e => {
-    if (e.target.closest('iframe, button, a, input')) return;
+    if (s.state !== 'ad' || e.target.closest('iframe, button, a, input')) return;
     const r = s.screen.getBoundingClientRect(), left = (e.clientX - r.left) < r.width / 3;
     storyGo(s, storyPos(s) + (left ? -1 : 1));
   });
@@ -1533,7 +1561,7 @@ setInterval(() => { const s = secs[mIdx]; if (s) mountLazy(s); }, 150);
 function mountLazy(s) {
   s.el.querySelectorAll('.flick-lazy').forEach(ph => {
     const id = ph.dataset.fid;
-    const on = ph.querySelector('flam-embed'), shown = lazyShown(ph, s) && !(s.kind === 'story' && s.state !== 'ad');   // story Flicks unload once the photo stories start
+    const on = ph.querySelector('flam-embed'), shown = lazyShown(ph, s) && !(s.kind === 'story' && s.state !== 'ad' && s.state !== 'home');   // story Flicks start loading on the home screen, so the Gucci story is ready when tapped   // story Flicks unload once the photo stories start
     if (on && !shown) { const f = on.querySelector('iframe'); try { if (f) f.src = 'about:blank'; } catch (x) {} on.remove(); return; }   // hidden again (story moved to its next ad): unload, so nothing plays unseen
     if (on || !shown) return;
     document.querySelectorAll('.flick-lazy flam-embed[data-fid="' + id + '"]').forEach(el => el.remove());   // one live copy per Flick
@@ -1665,7 +1693,7 @@ document.body.appendChild(cue);
 let cueLast = Date.now(), cueGeo = '';
 function cueOn() { return !navd || Date.now() - cueLast > 20000; }
 (function cueFollow() {
-  const show = cueOn() && current && mIdx < secs.length - 1 + (navd ? 1 : 0);
+  const show = cueOn() && current && mIdx < secs.length - 1 + (navd ? 1 : 0) && !/^(splash|home)$/.test(current.el.dataset.state);   // not over the Instagram launch screens
   cue.classList.toggle('on', !!show);
   if (show && !mq.matches) {   // laptop: beside the phone, on its right
     const ph = current.el.querySelector('.phone'); if (ph) { const r = ph.getBoundingClientRect(), g = Math.round(r.right + 34) + ',' + Math.round(r.top + r.height / 2);
