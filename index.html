@@ -1782,7 +1782,7 @@ function disengage(s, hard) {
 }
 // a tap inside a cross-origin frame moves focus into it: that is the "tapped the ad" signal
 setInterval(() => {
-  secs.forEach(s => { if (s !== current) park(s, false); const [m, f] = parts(s); f.forEach(stripAutoplay); if (!s.engaged) m.forEach(x => { if (!x.muted && !guarded(x)) x.muted = true; }); });
+  secs.forEach(s => { if (s !== current) park(s, false); else if (s.kind === 'partner') park(s, s.state === 'iab'); const [m, f] = parts(s); f.forEach(stripAutoplay); if (!s.engaged) m.forEach(x => { if (!x.muted && !guarded(x)) x.muted = true; }); });
   const a = document.activeElement;
   if (a && a !== document.body) { const s = secs.find(x => x.media.contains(a)); if (s && s.active && LIVE[s.state]) engage(s); }
   // phones do not always move focus into a Flick when it is tapped; the page losing focus while a Flick is open is the same signal
