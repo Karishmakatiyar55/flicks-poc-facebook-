@@ -298,7 +298,7 @@ main{position:relative;z-index:1}
 .st-row b{font-weight:600}
 .st-row span{opacity:.75}
 .st-row .x{margin-left:auto;display:flex;gap:14px}
-.fmt[data-state="s1"] .st-row.r0,.fmt[data-state="s2"] .st-row.r1,.fmt[data-state="leadin"] .st-row.r2,.st-row.always{display:flex}
+.fmt[data-state="s1"] .st-row.r0,.fmt[data-state="s2"] .st-row.r1,.fmt[data-state="leadin"]:not([data-ad="1"]) .st-row.r2,.fmt[data-state="leadin"][data-ad="1"] .st-row.r3,.st-row.always{display:flex}
 .st-reply{position:absolute;left:12px;right:12px;bottom:22px;display:flex;align-items:center;gap:14px}
 .st-reply .in{flex:1;height:44px;border-radius:22px;border:1px solid rgba(255,255,255,.55);display:flex;align-items:center;padding:0 18px;font-size:14px;color:rgba(255,255,255,.85)}
 .st-cta{position:absolute;left:0;right:0;bottom:70px;z-index:25;display:flex;justify-content:center;transition:opacity .3s;opacity:0}
@@ -612,6 +612,8 @@ main{position:relative;z-index:1}
 .mp-sys i[data-ic]{width:14px;height:14px}
 .mp-fit{background:transparent}
 
+#f2[data-ad="1"] .ad0,#f2:not([data-ad="1"]) .ad1{display:none}
+#f2[data-ad="1"] .media{--tint:#2a1620 !important}
 /* closing */
 .closing{max-width:1240px;margin:0 auto;padding:120px 32px 60px;display:flex;flex-direction:column;gap:28px}
 .closing h2{margin:0;font-size:clamp(40px,5.4vw,80px);line-height:.98;letter-spacing:-.04em;font-weight:600;text-wrap:balance}
@@ -1086,6 +1088,7 @@ function place(s, r, clip) {
   m.clipPath = 'inset(' + (clip ? clip[0] : 0) + 'px 0px ' + (clip ? clip[1] : 0) + 'px 0px)';
 }
 function slotGeo(s) {
+  if (s.kind === 'story') s.slot = s.el.querySelector(s.adIdx ? '[data-slot-a1]' : '[data-slot]');
   if (s.kind === 'market') {
     // grid tile while browsing (trimmed to the grid's scroll area); listing photo after that (trimmed to the listing)
     const home = s.state === 'browse' || s.state === 'open';
@@ -1133,9 +1136,9 @@ function setState(s, st) {
     if (st === 'scroll') tweenScroll(s, feedTarget(s), 2400);
   }
   if (s.kind === 'story') {
-    const n = st === 's1' ? 1 : st === 's2' ? 2 : 0;
+    const n = st === 's1' ? 2 : st === 's2' ? 3 : (s.adIdx || 0);
     s.track.style.transform = 'translateX(-' + n * 100 + '%)';
-    if (st !== 'play') runBars(s, n, n === 0 ? 3500 : 3000);
+    if (st !== 'play') runBars(s, n, n <= 1 ? 3500 : 3000);
     if (st === 's1') s.timers.push(setTimeout(() => { if (s.state === 's1') setState(s, 's2'); }, 3000));
   }
   if (s.kind === 'sticker') { if (st === 'story') runBars(s, 0, 9000); else freezeBars(s); }
@@ -1165,6 +1168,7 @@ function clearAll(s) {
 function start(s) {
   clearAll(s);
   s.anim = false; s.media.style.transition = ''; s.canClose = false;
+  if (s.kind === 'story') { s.adIdx = 0; s.el.dataset.ad = '0'; }
   s.el.classList.remove('arrived');
   setState(s, ORDER[s.kind][0]);
   follow(s);
@@ -1294,6 +1298,11 @@ function play(s) {
   const count = s.closeBtn.querySelector('[data-count]');
   s.closeBtn.style.visibility = reward ? 'hidden' : 'visible';
   if (s.rpill) { s.rpill.classList.remove('done'); s.rtext.textContent = 'Reward in ' + n + 's'; }
+  if (s.kind === 'story') {
+    const b = s.adIdx ? ['N', '#6b2c45', 'Necklace Swap', '4.6 · Jewelry'] : ['G', '#0f3b2a', 'Gucci', '4.7 · Lifestyle'];
+    const ic = s.el.querySelector('[data-pc-icon]'); ic.textContent = b[0]; ic.style.background = b[1];
+    s.el.querySelector('[data-pc-name]').textContent = b[2]; s.el.querySelector('[data-pc-sub]').textContent = b[3];
+  }
   clearInterval(s.tick);
   s.tick = setInterval(() => {
     n--;
@@ -1309,6 +1318,14 @@ function play(s) {
 function closePlay(s) {
   if (s.state !== 'play' || !s.canClose) return;
   clearInterval(s.tick);
+  if (s.kind === 'story' && !s.adIdx) {
+    // first Flick story done: on to the second Flick story
+    s.adIdx = 1; s.el.dataset.ad = '1';
+    s.anim = false; s.media.style.transition = '';
+    setState(s, 'leadin');
+    s.timers.push(setTimeout(() => { if (s.state === 'leadin' && s.adIdx === 1) play(s); }, 3500));
+    return;
+  }
   const next = s.kind === 'reward' ? 'done' : s.kind === 'story' ? 's1' : 'leadin';
   s.anim = true; s.media.style.transition = GEO;
   setState(s, next);
@@ -1382,6 +1399,18 @@ const MT = [
 const mh = document.querySelector('.mhead'), mprog = mh.querySelector('[data-mprog]');
 mprog.innerHTML = secs.map(() => '<span></span>').join('');
 let mIdx = 0;
+function mountLazy(s) {
+  s.el.querySelectorAll('.flick-lazy').forEach(ph => {
+    const id = ph.dataset.fid;
+    if (ph.querySelector('flam-embed#' + id)) return;
+    document.querySelectorAll('flam-embed#' + id).forEach(el => el.remove());   // only one live copy per Flick
+    const fe = document.createElement('flam-embed'); fe.id = id; fe.style.cssText = 'aspect-ratio:' + ph.dataset.ar + ';width:100%';
+    ph.appendChild(fe);
+    if (!(window.customElements && customElements.get('flam-embed'))) {
+      const sc = document.createElement('script'); sc.async = true; sc.src = 'https://flicks.flamapp.live/' + id + '/embed.js'; document.body.appendChild(sc);
+    }
+  });
+}
 function mShow(i) {
   const n = Math.max(0, Math.min(secs.length - 1, i));
   if (current && n === mIdx && current === secs[n]) return;  // already showing it: past the first or last format, do nothing
@@ -1395,6 +1424,7 @@ function mShow(i) {
   mh.querySelector('[data-mnext]').disabled = mIdx === secs.length - 1;
   [...mprog.children].forEach((b, j) => b.classList.toggle('on', j <= mIdx));
   secs.forEach((s, j) => { s.el.classList.toggle('cur', j === mIdx); s.near = j === mIdx; });
+  mountLazy(secs[mIdx]);
   // every other format is fully unloaded, so nothing off-screen can make sound
   secs.forEach((s, j) => park(s, j === mIdx));
   activate(null); activate(secs[mIdx]);
