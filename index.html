@@ -504,18 +504,21 @@ main{position:relative;z-index:1}
   :root{--mh:env(safe-area-inset-top,0px)!important}
 }
 /* swipe hint (phones): dots on the right edge, the current one longer; a soft chevron bobs for a few seconds */
-.swipe-dots{display:none}
-@media (max-width:760px){
-  .swipe-dots{position:fixed;right:5px;top:50%;transform:translateY(-50%);z-index:90;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none}
-  .swipe-dots span{width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.25);transition:height .35s cubic-bezier(.2,.8,.2,1),background .35s}
-  .swipe-dots span.on{height:16px;background:#fff}
-  .swipe-dots i{margin-top:6px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
-  .swipe-dots i svg{width:12px;height:12px}
-  .swipe-dots.nudge i{opacity:.9;animation:hintUp 1.4s ease-in-out infinite}
-  @keyframes hintUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-  @keyframes peek{0%,100%{transform:translateY(0)}35%{transform:translateY(-22px)}60%{transform:translateY(0)}78%{transform:translateY(-6px)}}
-  .fmt.peek .phone{animation:peek 1.05s cubic-bezier(.3,.7,.3,1)}
-}
+/* swipe handle: a slim strip on the phone's right edge that stays above every Flick, so formats can always be changed */
+.swipe-dots{position:fixed;z-index:9000;width:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 0;transform:translate(-100%,-50%);touch-action:none;cursor:ns-resize;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.swipe-dots::before{content:"";position:absolute;inset:4px 5px;border-radius:12px;background:rgba(10,8,7,.0);transition:background .4s,box-shadow .4s}
+.swipe-dots.live::before{background:rgba(10,8,7,.38);box-shadow:0 0 0 .5px rgba(255,255,255,.18),0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.swipe-dots span{position:relative;width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.25);transition:height .35s cubic-bezier(.2,.8,.2,1),background .35s}
+.swipe-dots span::after{content:"";position:absolute;left:-10px;right:-10px;top:-3px;bottom:-3px}
+.swipe-dots span.on{height:16px;background:#fff}
+.swipe-dots i{position:relative;margin-top:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.32);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
+.swipe-dots i svg{width:12px;height:12px}
+.swipe-dots.nudge i{opacity:.9;animation:hintUp 1.4s ease-in-out infinite}
+.swipe-dots.drag span.on{background:#ffb48a}
+@keyframes hintUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.swipe-dots.glow::before{animation:hglow 1.6s ease-out}
+@keyframes hglow{0%{box-shadow:0 0 0 0 rgba(255,180,138,.55)}100%{box-shadow:0 0 0 12px rgba(255,180,138,0)}}
+
 
 
 /* phone pager header (hidden on desktop) */
@@ -1601,16 +1604,45 @@ addEventListener('message', e => {
     userShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
   }
 });
-// until the viewer swipes once: the chevron stays, and the screen gives a gentle upward "peek" every few seconds
+// swipe handle on the phone's right edge. Flicks are separate sites, so a swipe that starts on a Flick never reaches
+// this page; the handle sits above them and always changes format (drag it, tap a dot, or scroll the wheel over it)
 let navd = false;
-function userShow(i) { navd = true; document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); }
-setInterval(() => {
-  if (navd || !mq.matches || !current || mIdx >= secs.length - 1) return;
-  current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
-}, 6500);
-const swipeDots = document.createElement('div'); swipeDots.className = 'swipe-dots'; swipeDots.setAttribute('aria-hidden', 'true');
-swipeDots.innerHTML = secs.map(() => '<span></span>').join('') + '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></i>';
+function userShow(i) { navd = true; mShow(i); }
+const swipeDots = document.createElement('div'); swipeDots.className = 'swipe-dots'; swipeDots.setAttribute('role', 'navigation'); swipeDots.setAttribute('aria-label', 'Formats: drag up or down');
+swipeDots.innerHTML = secs.map((s, j) => '<span data-j="' + j + '"></span>').join('') + '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></i>';
 document.body.appendChild(swipeDots); window.swipeDots = swipeDots;
+let hD = null;
+swipeDots.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); hD = { y: e.clientY, j: e.target.dataset ? e.target.dataset.j : null }; swipeDots.classList.add('drag'); try { swipeDots.setPointerCapture(e.pointerId); } catch (x) {} });
+swipeDots.addEventListener('pointerup', e => {
+  e.stopPropagation(); swipeDots.classList.remove('drag'); if (!hD) return; const d = hD; hD = null; const dy = d.y - e.clientY;
+  if (Math.abs(dy) >= 24) userShow(mIdx + (dy > 0 ? 1 : -1));
+  else if (d.j != null) userShow(+d.j);
+  else userShow(mIdx + 1);
+});
+swipeDots.addEventListener('pointercancel', () => { hD = null; swipeDots.classList.remove('drag'); });
+['touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(n => swipeDots.addEventListener(n, e => e.stopPropagation(), { passive: true }));
+let hW = 0, hL = 0;
+swipeDots.addEventListener('wheel', e => { e.preventDefault(); e.stopPropagation(); const now = Date.now(); if (now < hL) return; hW += e.deltaY; if (Math.abs(hW) < 40) return; userShow(mIdx + (hW > 0 ? 1 : -1)); hW = 0; hL = now + 700; }, { passive: false });
+// keep it on the right edge of the screen in view, and make it stand out while a Flick or in-app page is open:
+// that is when swiping on the screen itself cannot reach the page
+let hGeo = '';
+(function hFollow() {
+  const sc = current && (current.el.querySelector('.screen') || current.el.querySelector('.phone'));
+  if (sc) {
+    const r = sc.getBoundingClientRect(), g = Math.round(r.right - 2) + ',' + Math.round(r.top + r.height * .5);
+    if (g !== hGeo) { hGeo = g; swipeDots.style.left = Math.round(r.right - 2) + 'px'; swipeDots.style.top = Math.round(r.top + r.height * .5) + 'px'; }
+    const st = current.el.dataset.state || '';
+    const live = !!(LIVE[st] || current.engaged || /^(gr|md|play)/.test(st) || current.el.querySelector('.media.show, .media.on'));
+    if (live !== swipeDots.classList.contains('live')) {
+      swipeDots.classList.toggle('live', live);
+      if (live) { swipeDots.classList.remove('glow'); void swipeDots.offsetWidth; swipeDots.classList.add('glow'); }
+    }
+  }
+  requestAnimationFrame(hFollow);
+})();
+// until the viewer has changed format once, the chevron on the handle keeps nodding
+setInterval(() => { if (!navd && mIdx < secs.length - 1) swipeDots.classList.add('nudge'); }, 4000);
+
 function modeChange() {
   mShow(current ? current.i : mIdx);
 }
@@ -1643,7 +1675,7 @@ function collect(root, out, frames) {
 function parts(s) { const m = [], f = []; collect(s.media, m, f); return [m, f]; }
 function stripAutoplay(f) {
   // no autoplay delegation: the frame can only make sound after a tap inside it
-  if (f._fx) return; f._fx = true;
+  if (f._fx || f.dataset.autoplay) return; f._fx = true;   // MicroDrama keeps autoplay: it starts on arrival and is unloaded on leave
   const a = f.getAttribute('allow') || '';
   if (/autoplay/i.test(a)) {
     f.setAttribute('allow', a.split(';').filter(x => !/autoplay/i.test(x)).join(';'));
