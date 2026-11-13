@@ -504,21 +504,12 @@ main{position:relative;z-index:1}
   :root{--mh:env(safe-area-inset-top,0px)!important}
 }
 /* swipe hint (phones): dots on the right edge, the current one longer; a soft chevron bobs for a few seconds */
-/* swipe handle: a slim strip on the phone's right edge that stays above every Flick, so formats can always be changed */
-.swipe-dots{position:fixed;z-index:9000;width:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 0;transform:translate(-100%,-50%);touch-action:none;cursor:ns-resize;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
-.swipe-dots::before{content:"";position:absolute;inset:4px 5px;border-radius:12px;background:rgba(10,8,7,.0);transition:background .4s,box-shadow .4s}
-.swipe-dots.live::before{background:rgba(10,8,7,.38);box-shadow:0 0 0 .5px rgba(255,255,255,.18),0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.swipe-dots span{position:relative;width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.25);transition:height .35s cubic-bezier(.2,.8,.2,1),background .35s}
-.swipe-dots span::after{content:"";position:absolute;left:-10px;right:-10px;top:-3px;bottom:-3px}
-.swipe-dots span.on{height:16px;background:#fff}
-.swipe-dots i{position:relative;margin-top:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.32);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
-.swipe-dots i svg{width:12px;height:12px}
-.swipe-dots.nudge i{opacity:.9;animation:hintUp 1.4s ease-in-out infinite}
-.swipe-dots.drag span.on{background:#ffb48a}
-@keyframes hintUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.swipe-dots.glow::before{animation:hglow 1.6s ease-out}
-@keyframes hglow{0%{box-shadow:0 0 0 0 rgba(255,180,138,.55)}100%{box-shadow:0 0 0 12px rgba(255,180,138,0)}}
-
+@keyframes peek{0%,100%{transform:translateY(0)}35%{transform:translateY(-22px)}60%{transform:translateY(0)}78%{transform:translateY(-6px)}}
+.fmt.peek .phone{animation:peek 1.05s cubic-bezier(.3,.7,.3,1)}
+/* scroll room: the page itself scrolls a little, invisibly, so swipes handed on by a Flick can change format */
+html.room,html.room body{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;scroll-behavior:auto!important;overscroll-behavior:none!important;scrollbar-width:none}
+html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
+.scroll-room{height:calc(100vh + 1400px);pointer-events:none}
 
 
 /* phone pager header (hidden on desktop) */
@@ -1604,44 +1595,37 @@ addEventListener('message', e => {
     userShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
   }
 });
-// swipe handle on the phone's right edge. Flicks are separate sites, so a swipe that starts on a Flick never reaches
-// this page; the handle sits above them and always changes format (drag it, tap a dot, or scroll the wheel over it)
-let navd = false;
-function userShow(i) { navd = true; mShow(i); }
-const swipeDots = document.createElement('div'); swipeDots.className = 'swipe-dots'; swipeDots.setAttribute('role', 'navigation'); swipeDots.setAttribute('aria-label', 'Formats: drag up or down');
-swipeDots.innerHTML = secs.map((s, j) => '<span data-j="' + j + '"></span>').join('') + '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></i>';
-document.body.appendChild(swipeDots); window.swipeDots = swipeDots;
-let hD = null;
-swipeDots.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); hD = { y: e.clientY, j: e.target.dataset ? e.target.dataset.j : null }; swipeDots.classList.add('drag'); try { swipeDots.setPointerCapture(e.pointerId); } catch (x) {} });
-swipeDots.addEventListener('pointerup', e => {
-  e.stopPropagation(); swipeDots.classList.remove('drag'); if (!hD) return; const d = hD; hD = null; const dy = d.y - e.clientY;
-  if (Math.abs(dy) >= 24) userShow(mIdx + (dy > 0 ? 1 : -1));
-  else if (d.j != null) userShow(+d.j);
-  else userShow(mIdx + 1);
-});
-swipeDots.addEventListener('pointercancel', () => { hD = null; swipeDots.classList.remove('drag'); });
-['touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(n => swipeDots.addEventListener(n, e => e.stopPropagation(), { passive: true }));
-let hW = 0, hL = 0;
-swipeDots.addEventListener('wheel', e => { e.preventDefault(); e.stopPropagation(); const now = Date.now(); if (now < hL) return; hW += e.deltaY; if (Math.abs(hW) < 40) return; userShow(mIdx + (hW > 0 ? 1 : -1)); hW = 0; hL = now + 700; }, { passive: false });
-// keep it on the right edge of the screen in view, and make it stand out while a Flick or in-app page is open:
-// that is when swiping on the screen itself cannot reach the page
-let hGeo = '';
-(function hFollow() {
-  const sc = current && (current.el.querySelector('.screen') || current.el.querySelector('.phone'));
-  if (sc) {
-    const r = sc.getBoundingClientRect(), g = Math.round(r.right - 2) + ',' + Math.round(r.top + r.height * .5);
-    if (g !== hGeo) { hGeo = g; swipeDots.style.left = Math.round(r.right - 2) + 'px'; swipeDots.style.top = Math.round(r.top + r.height * .5) + 'px'; }
-    const st = current.el.dataset.state || '';
-    const live = !!(LIVE[st] || current.engaged || /^(gr|md|play)/.test(st) || current.el.querySelector('.media.show, .media.on'));
-    if (live !== swipeDots.classList.contains('live')) {
-      swipeDots.classList.toggle('live', live);
-      if (live) { swipeDots.classList.remove('glow'); void swipeDots.offsetWidth; swipeDots.classList.add('glow'); }
-    }
-  }
-  requestAnimationFrame(hFollow);
-})();
-// until the viewer has changed format once, the chevron on the handle keeps nodding
-setInterval(() => { if (!navd && mIdx < secs.length - 1) swipeDots.classList.add('nudge'); }, 4000);
+// until the viewer changes format once, the screen gives a gentle upward "peek" every few seconds
+let navd = false, navLock = 0;
+function userShow(i) { navd = true; navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); roomDrag(0, true); }
+setInterval(() => {
+  if (navd || !current || mIdx >= secs.length - 1) return;
+  current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
+}, 6500);
+// Swipe and scroll over a Flick. A Flick is its own website inside the page, so its touches never reach this page;
+// but once the Flick has nothing of its own to scroll, the browser hands the scroll on to the page. The page keeps
+// some scroll room above and below the screen and turns that scroll into a format change; the phone follows the finger.
+const ROOM = 700;
+const room = document.createElement('div'); room.className = 'scroll-room'; room.setAttribute('aria-hidden', 'true');
+document.body.appendChild(room); document.documentElement.classList.add('room');
+function roomHome() { if (Math.abs(scrollY - ROOM) > .5) scrollTo({ top: ROOM, left: 0, behavior: 'instant' }); }
+function roomDrag(d, settle) {
+  const ph = current && current.el.querySelector('.phone'); if (!ph) return;
+  document.querySelectorAll('.fmt .phone').forEach(x => { if (x !== ph && x.style.translate) { x.style.transition = ''; x.style.translate = ''; } });
+  ph.style.transition = settle ? 'translate .32s cubic-bezier(.2,.8,.2,1)' : 'none';
+  const v = Math.max(-90, Math.min(90, d * .55));
+  ph.style.translate = Math.abs(v) < .5 ? '' : '0 ' + (-v).toFixed(1) + 'px';
+}
+roomHome(); addEventListener('load', roomHome); addEventListener('resize', roomHome);
+let roomT = null;
+addEventListener('scroll', () => {
+  const d = scrollY - ROOM;
+  clearTimeout(roomT);
+  if (Date.now() < navLock) { roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 90); return; }
+  roomDrag(d, false);
+  if (Math.abs(d) >= 70) { userShow(mIdx + (d > 0 ? 1 : -1)); roomT = setTimeout(roomHome, 90); return; }
+  roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 140);
+}, { passive: true });
 
 function modeChange() {
   mShow(current ? current.i : mIdx);
