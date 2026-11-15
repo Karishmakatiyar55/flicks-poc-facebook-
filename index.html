@@ -559,6 +559,79 @@ main{position:relative;z-index:1}
   html body .mhead{display:none!important}
   :root{--mh:env(safe-area-inset-top,0px)!important}
 }
+/* swipe hint (phones): dots on the right edge, the current one longer; a soft chevron bobs for a few seconds */
+@keyframes peek{0%,100%{transform:translateY(0)}35%{transform:translateY(-22px)}60%{transform:translateY(0)}78%{transform:translateY(-6px)}}
+.fmt.peek .phone{animation:peek 1.05s cubic-bezier(.3,.7,.3,1)}
+/* scroll room: the page itself scrolls a little, invisibly, so swipes handed on by a Flick can change format */
+html.room,html.room body{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;scroll-behavior:auto!important;overscroll-behavior:none!important;scrollbar-width:none}
+html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
+.scroll-room{height:calc(100vh + 1400px);pointer-events:none}
+/* scroll cue */
+.scroll-cue{position:fixed;z-index:9200;pointer-events:none;opacity:0;transition:opacity .6s ease;display:flex;flex-direction:column;align-items:center;gap:10px;transform:translate(0,-50%);color:rgba(244,231,224,.78)}
+.scroll-cue.on{opacity:1}
+.scroll-cue .sc-phone{display:none}
+.sc-mouse{position:relative;width:22px;height:34px;border:1.6px solid currentColor;border-radius:12px;box-sizing:border-box}
+.sc-wheel{position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:currentColor;animation:scWheel 1.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes scWheel{0%{transform:translateY(0);opacity:0}20%{opacity:1}70%{transform:translateY(9px);opacity:0}100%{opacity:0}}
+.sc-word{font:600 10px/1 var(--f-page,inherit);letter-spacing:.24em;text-transform:uppercase;writing-mode:vertical-rl;color:rgba(244,231,224,.55)}
+@media (max-width:760px){
+  .scroll-cue{left:10px!important;top:42%!important;bottom:auto;transform:none;color:#fff}
+  .scroll-cue .sc-mouse,.scroll-cue .sc-word{display:none}
+  .scroll-cue .sc-phone{display:block;position:relative;width:38px;height:62px;border-radius:19px;background:rgba(12,9,8,.42);box-shadow:0 0 0 .5px rgba(255,255,255,.22),0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .sc-track{position:absolute;left:50%;top:14px;bottom:14px;width:2px;margin-left:-1px;border-radius:1px;background:linear-gradient(to top,rgba(255,255,255,0),rgba(255,255,255,.35))}
+  .sc-dot{position:absolute;left:50%;width:12px;height:12px;margin-left:-6px;bottom:10px;border-radius:50%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.7);animation:scFinger 1.9s cubic-bezier(.45,0,.2,1) infinite}
+  .sc-chev{position:absolute;left:50%;top:-20px;width:18px;height:18px;margin-left:-9px;color:rgba(255,255,255,.9);animation:scChev 1.9s ease-in-out infinite;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+  @keyframes scFinger{0%{transform:translateY(0) scale(.6);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}65%{transform:translateY(-30px) scale(1);opacity:1}85%,100%{transform:translateY(-34px) scale(.6);opacity:0}}
+  @keyframes scChev{0%,30%{transform:translateY(4px);opacity:0}65%{transform:translateY(0);opacity:1}100%{transform:translateY(-4px);opacity:0}}
+}
+
+
+
+/* ── Facebook's floating tab bar: Reels, Home, Friends, Marketplace, Notifications, Profile ── */
+.fmt{--dk-b:16px;--dk-h:54px}
+.fb-dock{position:absolute;left:14px;right:14px;bottom:var(--dk-b);height:var(--dk-h);z-index:24;box-sizing:border-box;padding:0 7px;border-radius:calc(var(--dk-h) / 2);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.84);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 8px 24px rgba(0,0,0,.16);color:#1c1e21}
+.fb-dock.dk{background:rgba(42,43,46,.86);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16),0 8px 24px rgba(0,0,0,.45);color:#fff}
+.mp .fb-dock{z-index:16}
+.fb-dock > *{position:relative;flex:1;height:calc(var(--dk-h) - 12px);border-radius:calc(var(--dk-h) / 2);display:flex;align-items:center;justify-content:center;color:inherit}
+.fb-dock > button{cursor:pointer}
+.fb-dock > .on{background:rgba(8,102,255,.1);color:#0866FF}
+.fb-dock.dk > .on{background:rgba(255,255,255,.15);color:#fff}
+.fb-dock i[data-ic]{width:25px;height:25px}
+.fb-dock em{position:absolute;left:calc(50% + 1px);top:1px;min-width:18px;height:18px;box-sizing:border-box;padding:0 5px;border-radius:9px;background:#E41E3F;color:#fff;font-style:normal;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+.fb-dock .me{position:relative;overflow:hidden;width:27px;height:27px;border-radius:50%;background:#8a8d91;box-shadow:0 0 0 1.5px currentColor}
+
+/* ── Facebook Reels: three sponsored reels, each one an interactive video. All three load together when Reels opens (the two
+   that are not on screen sit underneath, invisible), so the next reel is already playing when it slides in.
+   The video stops above a strip that holds the profile row and the tab bar, so nothing sits on a video's own swap buttons. */
+.fmt[data-kind="reels"]{--rl-band:calc(var(--dk-b) + var(--dk-h) + 44px)}
+.rl-slot{position:absolute;left:0;right:0;top:var(--sbh);bottom:0}
+.fmt[data-kind="reels"] .cf-track{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.fmt[data-kind="reels"] .media .mi[data-reel]{position:absolute;inset:0;box-sizing:border-box;padding-bottom:var(--rl-band);align-items:flex-end}
+.fmt[data-kind="reels"] .media .mi[data-reel]:not(.on){opacity:0;pointer-events:none!important}
+.fmt[data-kind="reels"] .media .mi[data-reel]::before{content:"";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2.5px solid rgba(255,255,255,.16);border-top-color:rgba(255,255,255,.85);animation:rlSpin .8s linear infinite}
+@keyframes rlSpin{to{transform:rotate(360deg)}}
+.fmt[data-kind="reels"] .media .mi[data-reel] > *{position:relative}
+.fmt[data-kind="reels"] .media iframe.cfr{background:transparent}
+.fmt[data-kind="reels"] .media .mi[data-reel] .flick-lazy{display:contents}
+.fmt[data-kind="reels"] .media .mi[data-reel] flam-embed{position:relative;flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
+.rl-ov{z-index:25;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.rl-box{position:absolute;left:0;right:0;top:var(--sbh);bottom:0;box-sizing:border-box;padding-bottom:var(--rl-band);container-type:size;display:flex;align-items:flex-end;justify-content:center}
+.rl-frame{position:relative;flex:none;width:min(100cqw, calc(100cqh * 9 / 16));height:min(100cqh, calc(100cqw * 16 / 9))}
+/* Facebook's rail: like, comment, share, save, more. It stops just above each video's mute button; taps pass through it. */
+.rl-rail{position:absolute;right:7px;bottom:7%;display:flex;flex-direction:column;align-items:center;gap:15px;font-size:11.5px;font-weight:600;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.rl-rail span{display:flex;flex-direction:column;align-items:center;gap:3px}
+.rl-rail i[data-ic]{width:27px;height:27px}
+.rl-rail span:last-child i[data-ic]{width:24px;height:24px}
+.rl-meta{position:absolute;left:12px;right:12px;bottom:calc(var(--rl-band) - 38px);height:34px;display:flex;align-items:center;gap:9px;text-shadow:none}
+.rl-meta .av{width:32px;height:32px;font-size:13px;flex:none}
+.rl-meta .nm{display:flex;flex-direction:column;gap:1px;line-height:1.15;min-width:0}
+.rl-meta .nm b{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;white-space:nowrap}
+.rl-meta .nm b i[data-ic]{width:12px;height:12px;opacity:.85}
+.rl-meta .nm small{font-size:11.5px;font-weight:500;color:rgba(255,255,255,.72)}
+.rl-follow{flex:none;height:27px;padding:0 13px;border-radius:9px;border:1px solid rgba(255,255,255,.65);display:flex;align-items:center;font-size:13.5px;font-weight:700}
+button.tag{cursor:pointer;transition:background .25s,border-color .25s}
+button.tag.on{background:rgba(237,180,158,.14);border-color:rgba(237,180,158,.5)}
+
 /* phone pager header (hidden on desktop) */
 .mhead{display:none;position:fixed;top:0;left:0;right:0;z-index:80;font-family:var(--f-page);height:var(--mh,60px);box-sizing:border-box;padding:env(safe-area-inset-top,0px) 8px 0;align-items:center;gap:8px;background:var(--bg);touch-action:pan-y}
 .mnav{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);display:flex;align-items:center;justify-content:center;flex:none}
@@ -794,6 +867,8 @@ main{position:relative;z-index:1}
   .story .stw{border-radius:0}
   .phone{border-radius:0}
   .tabbar{padding-bottom:8px;height:52px}
+  .fmt{--dk-b:8px;--dk-h:50px}
+  .fb-dock{left:10px;right:10px}
   .cw-keys{padding-bottom:14px}
   .sheet{padding-bottom:24px}
   .ms-comp{padding-bottom:12px}
@@ -859,7 +934,7 @@ main{position:relative;z-index:1}
       </article>
       <article class="fb-box" data-ad>
         <div class="fb-ph"><span class="av" style="background:#0a2a5c">G</span><span class="nm"><b>Gap</b><small>Sponsored · <i data-ic="globe"></i></small></span><i data-ic="more"></i></div>
-        <div class="fb-text">Tonight's fit, your way. Swap the pieces right here.</div>
+        <div class="fb-text">Swap tonight's fit, right here.</div>
         <div data-slot style="aspect-ratio:1/1;width:100%"></div>
         <div class="fb-cta"><div><small>gap.com</small><strong>Tonight's fit, your way</strong></div><button type="button">Shop now</button></div>
         <div class="fb-react"><span class="r"><b><i data-ic="like"></i></b>1.2K</span><span>88 comments · 41 shares</span></div>
@@ -872,7 +947,7 @@ main{position:relative;z-index:1}
       </article>
      </div>
     </div>
-    <nav class="tabbar fb-tabs"><i data-ic="home" class="on"></i><i data-ic="video"></i><i data-ic="users"></i><i data-ic="store"></i><i data-ic="bell"></i><i data-ic="menu"></i></nav>
+    <nav class="fb-dock" data-dock><button type="button" data-tab="reels" aria-label="Reels"><i data-ic="fbreels"></i></button><button type="button" data-tab="feed" aria-label="Home" class="on"><i data-ic="fbfeedfill"></i></button><span><i data-ic="users"></i><em>9+</em></span><button type="button" data-tab="market" aria-label="Marketplace"><i data-ic="store"></i></button><span><i data-ic="bell"></i><em>9+</em></span><span><b class="me" data-img="beach"></b></span></nav>
     <div class="media" data-media style="--tint:#0a2a5c"><div class="mi full">
       <iframe class="cfr" title="Gap ad" allow="fullscreen" allowtransparency="true" style="border:0;display:block;background:transparent" srcdoc="&lt;!doctype html&gt;
 &lt;meta charset=utf-8&gt;
@@ -908,12 +983,124 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
  </div>
 </section>
 
-<!-- ═════════ 03 AUDIENCE NETWORK REWARDED ═════════ -->
-<section class="fmt" id="f3" data-kind="reward" data-name="02 · Playable ad" data-state="browse">
+<!-- ═════════ 02 FACEBOOK REELS ═════════ -->
+<section class="fmt" id="f5" data-kind="reels" data-name="02 · Facebook Reels" data-state="live">
  <div class="fmt-in">
   <div class="copy">
     <nav class="fmtlist" aria-label="Formats"></nav>
-    <div class="eyebrow"><b>02</b><span class="rule"></span><span>Playable ad · Audience Network</span></div>
+    <div class="eyebrow"><b>02</b><span class="rule"></span><span>Facebook Reels</span></div>
+    <h2>Swap inside <span class="serif">the reel.</span></h2>
+    <p class="one">Three sponsored reels. Swap inside the reel, then swipe up for the next one.</p>
+    <div class="tags"><button type="button" class="tag" data-reel-go="0">Get Ready With Me</button><button type="button" class="tag" data-reel-go="1">Necklace swap</button><button type="button" class="tag" data-reel-go="2">Puffer jacket swap</button></div>
+    <button class="replay" data-replay><i data-ic="replay"></i>Replay</button>
+  </div>
+  <div class="stage"><div class="phone"><div class="sw">
+   <div class="screen reels" data-screen>
+    <div class="sb lt"><span>9:41</span><span class="ind"><span class="bars4"><span style="height:4px"></span><span style="height:6px"></span><span style="height:8px"></span><span style="height:11px"></span></span><span class="bat"></span></span></div>
+    <!-- one slide per reel; the live video (media layer) is glued to the slide on screen -->
+    <div class="cf-track" data-rtrack>
+      <div style="background:#000"><div class="rl-slot" data-rslot="0"></div></div>
+      <div style="background:#000"><div class="rl-slot" data-rslot="1"></div></div>
+      <div style="background:#000"><div class="rl-slot" data-rslot="2"></div></div>
+    </div>
+    <div class="media" data-media style="--tint:#000;background:#000">
+      <div class="mi full on" data-reel="0"><iframe class="cfr" title="Get Ready With Me reel" allow="fullscreen" allowtransparency="true" style="border:0;display:block;background:transparent" srcdoc="&lt;!doctype html&gt;
+&lt;meta charset=utf-8&gt;
+&lt;meta name=ad.orientation content=portrait,landscape&gt;
+&lt;meta name=color-scheme content=dark&gt;
+&lt;style&gt;html,body{margin:0;height:100%;background:transparent;overflow:hidden;color-scheme:dark}&lt;/style&gt;
+&lt;script&gt;
+/* audio guard: silent until the page says the viewer tapped in; never overrides the Flick&#x27;s own speaker button */
+(function(){window.__flamGuard=1;var on=false,ctxs=[],AC=window.AudioContext||window.webkitAudioContext;
+if(AC){var W=function(a){var c=a?new AC(a):new AC();ctxs.push(c);return c};W.prototype=AC.prototype;window.AudioContext=window.webkitAudioContext=W;}
+var P=HTMLMediaElement.prototype,play=P.play;P.play=function(){if(!on&amp;&amp;!this.muted){this.muted=true;this._g=1}return play.apply(this,arguments)};
+function apply(){document.querySelectorAll(&#x27;video,audio&#x27;).forEach(function(m){if(!on){if(!m.muted){m.muted=true;m._g=1}}else if(m._g){m._g=0;m.muted=false}});
+ctxs.forEach(function(c){try{if(!on){if(c.state===&#x27;running&#x27;){c._g=1;c.suspend()}}else if(c._g){c._g=0;c.resume()}}catch(e){}})}
+setInterval(apply,200);
+addEventListener(&#x27;message&#x27;,function(e){var d=e.data;/* sound comes on only from a tap inside this frame, never from a message */if(d&amp;&amp;d.type===&#x27;mute&#x27;){on=false;apply()}}); function tap(){if(!on){on=true;apply()}try{parent.postMessage({type:&#x27;flick-tap&#x27;},&#x27;*&#x27;)}catch(x){}} [&#x27;touchend&#x27;,&#x27;pointerup&#x27;,&#x27;click&#x27;].forEach(function(n){addEventListener(n,tap,true)});
+})();
+&lt;/script&gt;
+&lt;script&gt;
+/* report vertical swipes and scroll-wheel to the page, so the viewer can move to the next format from on top of the Flick */
+(function(){var y=null,x=0,t=0;
+addEventListener(&#x27;touchstart&#x27;,function(e){var p=e.touches[0];y=p.clientY;x=p.clientX;t=Date.now()},{passive:true,capture:true});
+addEventListener(&#x27;touchend&#x27;,function(e){if(y==null)return;var p=e.changedTouches[0],dy=y-p.clientY,dx=x-p.clientX;y=null;
+if(Date.now()-t&lt;900&amp;&amp;Math.abs(dy)&gt;=60&amp;&amp;Math.abs(dy)&gt;=Math.abs(dx)*1.3)parent.postMessage({type:&#x27;flick-gesture&#x27;,swipe:dy},&#x27;*&#x27;)},{passive:true,capture:true});
+addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;flick-gesture&#x27;,wheel:e.deltaY},&#x27;*&#x27;)},{passive:true,capture:true});})();
+&lt;/script&gt;
+
+&lt;script&gt;
+/* tell the page which variant the viewer switched to (player fires vertex-diff-change) */
+(function(){function send(e){try{var d=e&amp;&amp;e.detail;var o={};if(d&amp;&amp;typeof d===&#x27;object&#x27;){for(var k in d){var v=d[k];if(typeof v===&#x27;string&#x27;||typeof v===&#x27;number&#x27;||typeof v===&#x27;boolean&#x27;)o[k]=v}}else if(d!=null)o.value=d;parent.postMessage({type:&#x27;flick-variant&#x27;,detail:o},&#x27;*&#x27;)}catch(x){}}
+[&#x27;vertex-diff-change&#x27;].forEach(function(n){window.addEventListener(n,send,true);document.addEventListener(n,send,true)});})();
+&lt;/script&gt;
+&lt;script&gt;var ExitApi=window.ExitApi||{exit:function(){}},clickTag=&quot;${CLICK_URL_UNESC}&quot;;&lt;/script&gt;
+&lt;script src=https://native-ads-dev.appless.workers.dev/flicks1-grwm/ad.js&gt;&lt;/script&gt;"></iframe></div>
+      <div class="mi full" data-reel="1"><div class="flick-lazy" data-fid="ikutv6" data-ar="1080/1920"></div></div>
+      <div class="mi full" data-reel="2"><iframe class="cfr" title="Puffer jacket reel" allow="fullscreen" allowtransparency="true" style="border:0;display:block;background:transparent" srcdoc="&lt;!doctype html&gt;
+&lt;meta charset=utf-8&gt;
+&lt;meta name=ad.orientation content=portrait,landscape&gt;
+&lt;meta name=color-scheme content=dark&gt;
+&lt;style&gt;html,body{margin:0;height:100%;background:transparent;overflow:hidden;color-scheme:dark}&lt;/style&gt;
+&lt;script&gt;
+/* audio guard: silent until the page says the viewer tapped in; never overrides the Flick&#x27;s own speaker button */
+(function(){window.__flamGuard=1;var on=false,ctxs=[],AC=window.AudioContext||window.webkitAudioContext;
+if(AC){var W=function(a){var c=a?new AC(a):new AC();ctxs.push(c);return c};W.prototype=AC.prototype;window.AudioContext=window.webkitAudioContext=W;}
+var P=HTMLMediaElement.prototype,play=P.play;P.play=function(){if(!on&amp;&amp;!this.muted){this.muted=true;this._g=1}return play.apply(this,arguments)};
+function apply(){document.querySelectorAll(&#x27;video,audio&#x27;).forEach(function(m){if(!on){if(!m.muted){m.muted=true;m._g=1}}else if(m._g){m._g=0;m.muted=false}});
+ctxs.forEach(function(c){try{if(!on){if(c.state===&#x27;running&#x27;){c._g=1;c.suspend()}}else if(c._g){c._g=0;c.resume()}}catch(e){}})}
+setInterval(apply,200);
+addEventListener(&#x27;message&#x27;,function(e){var d=e.data;/* sound comes on only from a tap inside this frame, never from a message */if(d&amp;&amp;d.type===&#x27;mute&#x27;){on=false;apply()}}); function tap(){if(!on){on=true;apply()}try{parent.postMessage({type:&#x27;flick-tap&#x27;},&#x27;*&#x27;)}catch(x){}} [&#x27;touchend&#x27;,&#x27;pointerup&#x27;,&#x27;click&#x27;].forEach(function(n){addEventListener(n,tap,true)});
+})();
+&lt;/script&gt;
+&lt;script&gt;
+/* report vertical swipes and scroll-wheel to the page, so the viewer can move to the next format from on top of the Flick */
+(function(){var y=null,x=0,t=0;
+addEventListener(&#x27;touchstart&#x27;,function(e){var p=e.touches[0];y=p.clientY;x=p.clientX;t=Date.now()},{passive:true,capture:true});
+addEventListener(&#x27;touchend&#x27;,function(e){if(y==null)return;var p=e.changedTouches[0],dy=y-p.clientY,dx=x-p.clientX;y=null;
+if(Date.now()-t&lt;900&amp;&amp;Math.abs(dy)&gt;=60&amp;&amp;Math.abs(dy)&gt;=Math.abs(dx)*1.3)parent.postMessage({type:&#x27;flick-gesture&#x27;,swipe:dy},&#x27;*&#x27;)},{passive:true,capture:true});
+addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;flick-gesture&#x27;,wheel:e.deltaY},&#x27;*&#x27;)},{passive:true,capture:true});})();
+&lt;/script&gt;
+
+&lt;script&gt;
+/* tell the page which variant the viewer switched to (player fires vertex-diff-change) */
+(function(){function send(e){try{var d=e&amp;&amp;e.detail;var o={};if(d&amp;&amp;typeof d===&#x27;object&#x27;){for(var k in d){var v=d[k];if(typeof v===&#x27;string&#x27;||typeof v===&#x27;number&#x27;||typeof v===&#x27;boolean&#x27;)o[k]=v}}else if(d!=null)o.value=d;parent.postMessage({type:&#x27;flick-variant&#x27;,detail:o},&#x27;*&#x27;)}catch(x){}}
+[&#x27;vertex-diff-change&#x27;].forEach(function(n){window.addEventListener(n,send,true);document.addEventListener(n,send,true)});})();
+&lt;/script&gt;
+&lt;script&gt;var ExitApi=window.ExitApi||{exit:function(){}},clickTag=&quot;${CLICK_URL_UNESC}&quot;;&lt;/script&gt;
+&lt;script src=https://native-ads-dev.appless.workers.dev/flicks2-jacket-p1/ad.js&gt;&lt;/script&gt;"></iframe></div>
+    </div>
+    <!-- Reels UI over each video: Facebook's action rail, and the profile row in the strip under the video. Taps pass through to the video. -->
+    <div class="cf-track rl-ov" data-rtrack>
+      <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-rail"><span><i data-ic="like"></i>32.8K</span><span><i data-ic="comment"></i>249</span><span><i data-ic="share"></i>625</span><span><i data-ic="bookmark"></i>4.3K</span><span><i data-ic="more"></i></span></div>
+      </div>
+        <div class="rl-meta"><span class="av" style="background:#b5446e">M</span><span class="nm"><b>Maya Collins<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
+      </div></div>
+      <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-rail"><span><i data-ic="like"></i>48.2K</span><span><i data-ic="comment"></i>612</span><span><i data-ic="share"></i>731</span><span><i data-ic="bookmark"></i>9.1K</span><span><i data-ic="more"></i></span></div>
+      </div>
+        <div class="rl-meta"><span class="av" style="background:#8a6a2f">L</span><span class="nm"><b>Luna Jewelry<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
+      </div></div>
+      <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-rail"><span><i data-ic="like"></i>24.6K</span><span><i data-ic="comment"></i>302</span><span><i data-ic="share"></i>286</span><span><i data-ic="bookmark"></i>2.7K</span><span><i data-ic="more"></i></span></div>
+      </div>
+        <div class="rl-meta"><span class="av" style="background:#2f5d8a">N</span><span class="nm"><b>Northpeak<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
+      </div></div>
+    </div>
+    <nav class="fb-dock dk" data-dock><button type="button" data-tab="reels" aria-label="Reels" class="on"><i data-ic="fbreelsfill"></i></button><button type="button" data-tab="feed" aria-label="Home"><i data-ic="fbfeed"></i></button><span><i data-ic="users"></i><em>9+</em></span><button type="button" data-tab="market" aria-label="Marketplace"><i data-ic="store"></i></button><span><i data-ic="bell"></i><em>9+</em></span><span><b class="me" data-img="beach"></b></span></nav>
+    <div class="island"></div>
+   </div>
+  </div></div></div>
+ </div>
+</section>
+
+<!-- ═════════ 03 PLAYABLE AD (AUDIENCE NETWORK REWARDED) ═════════ -->
+<section class="fmt" id="f3" data-kind="reward" data-name="03 · Playable ad" data-state="browse">
+ <div class="fmt-in">
+  <div class="copy">
+    <nav class="fmtlist" aria-label="Formats"></nav>
+    <div class="eyebrow"><b>03</b><span class="rule"></span><span>Playable ad · Audience Network</span></div>
     <h2>Play the look, <span class="serif">earn a hint.</span></h2>
     <p class="one">A partner app trades a reward for 12 seconds of play.</p>
     <div class="tags"><span class="tag ">Eyeshadow Swap</span><span class="tag ">Rewarded</span><span class="tag ">Pays on installs</span></div>
@@ -943,11 +1130,11 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
 </section>
 
 <!-- ═════════ 03 MESSENGER ═════════ -->
-<section class="fmt lk-sec" id="f7" data-kind="chat" data-name="03 · Messenger" data-state="chat">
+<section class="fmt lk-sec" id="f7" data-kind="chat" data-name="04 · Messenger" data-state="chat">
  <div class="fmt-in">
   <div class="copy">
     <nav class="fmtlist" aria-label="Formats"></nav>
-    <div class="eyebrow"><b>03</b><span class="rule"></span><span>Messenger</span></div>
+    <div class="eyebrow"><b>04</b><span class="rule"></span><span>Messenger</span></div>
     <h2>Try it in the chat, <span class="serif">reply with the pick.</span></h2>
     <p class="one">The chair swaps inside West Elm's message. The reply goes back in the same thread.</p>
     <div class="tags"><span class="tag ">West Elm</span><span class="tag ">Messenger</span></div>
@@ -993,11 +1180,11 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
 </section>
 
 <!-- ═════════ 10 FACEBOOK MARKETPLACE ═════════ -->
-<section class="fmt" id="f10" data-kind="market" data-name="04 · Marketplace" data-state="browse">
+<section class="fmt" id="f10" data-kind="market" data-name="05 · Marketplace" data-state="browse">
  <div class="fmt-in">
   <div class="copy">
     <nav class="fmtlist" aria-label="Formats"></nav>
-    <div class="eyebrow"><b>04</b><span class="rule"></span><span>Marketplace</span></div>
+    <div class="eyebrow"><b>05</b><span class="rule"></span><span>Marketplace</span></div>
     <h2>Try every variant. <span class="serif">Message the one you want.</span></h2>
     <p class="one">The listing photo is the interactive video. The chosen style goes straight to the seller in Messenger.</p>
     <div class="tags"><span class="tag " data-mp-brand>Winter jackets</span><span class="tag ">Marketplace listing</span><span class="tag ">Click to message</span></div>
@@ -1017,7 +1204,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
         <div class="mp-tile"><div class="mp-ph" data-img="mp_lamp" style="background:#e4e6eb"></div><b>$35</b><span>Brass table lamp</span><small>Austin, TX</small></div><div class="mp-tile"><div class="mp-ph" data-img="mp_shelf" style="background:#e4e6eb"></div><b>$60</b><span>5-tier white bookshelf</span><small>Round Rock, TX</small></div><div class="mp-tile"><div class="mp-ph" data-img="mp_plants" style="background:#e4e6eb"></div><b>$25</b><span>3 indoor plants</span><small>Cedar Park, TX</small></div>
       </div>
     </div>
-    <nav class="tabbar fb-tabs"><i data-ic="home"></i><i data-ic="video"></i><i data-ic="store" class="on"></i><i data-ic="users"></i><i data-ic="bell"></i><i data-ic="menu"></i></nav>
+    <nav class="fb-dock" data-dock><button type="button" data-tab="reels" aria-label="Reels"><i data-ic="fbreels"></i></button><button type="button" data-tab="feed" aria-label="Home"><i data-ic="fbfeed"></i></button><span><i data-ic="users"></i><em>9+</em></span><button type="button" data-tab="market" aria-label="Marketplace" class="on"><i data-ic="storefill"></i></button><span><i data-ic="bell"></i><em>9+</em></span><span><b class="me" data-img="beach"></b></span></nav>
 
     <!-- listing -->
     <div class="mp-list">
@@ -1125,6 +1312,11 @@ const P = {
   search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
   chat:'<path d="M12 3c5 0 9 3.6 9 8.2s-4 8.2-9 8.2c-1 0-2-.1-2.9-.4L4 21l1.4-4.1C3.9 15.4 3 13.4 3 11.2 3 6.6 7 3 12 3z"/>',
   home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  fbreels:'<rect x="3" y="3.5" width="18" height="17" rx="4.5"/><path d="M3 8.5h18M8 3.5l2.5 5M14 3.5l2.5 5M10.2 12v5l4.6-2.5z"/>',
+  fbreelsfill:'<path d="M7.5 3.5h9A4.5 4.5 0 0 1 21 8v8a4.5 4.5 0 0 1-4.5 4.5h-9A4.5 4.5 0 0 1 3 16V8a4.5 4.5 0 0 1 4.5-4.5z" fill="currentColor" stroke="none"/><path d="M3.4 8.6h17.2M8.2 3.9l2.3 4.6M13.9 3.7l2.3 4.8" stroke="#2a2b2e" stroke-width="1.5"/><path d="M10.4 11.9v5l4.6-2.5z" fill="#2a2b2e" stroke="#2a2b2e" stroke-width="1.2"/>',
+  fbfeed:'<rect x="3" y="4" width="18" height="16" rx="4.5"/><circle cx="7.6" cy="8.8" r="1.2" fill="currentColor" stroke="none"/><path d="M11 8.8h6M3 12.6h18"/>',
+  fbfeedfill:'<rect x="3" y="4" width="18" height="16" rx="4.5" fill="currentColor" stroke="none"/><circle cx="7.6" cy="8.8" r="1.2" fill="#fff" stroke="none"/><path d="M11 8.8h6M3.5 12.6h17" stroke="#fff"/>',
+  storefill:'<path d="M4 9l1.5-5h13L20 9v11H4z" fill="currentColor" stroke="currentColor"/><path d="M4 9h16M9.5 20v-5.5h5V20" stroke="#fff"/>',
   video:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.3 0 4 1.5 4.5 4"/>',
   store:'<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM9 20v-6h6v6"/>',
@@ -1192,6 +1384,7 @@ const ORDER = {
   feed:['browse','scroll','ad'], story:['splash','home','ad'], reward:['browse','offer','play','done'],
   creator:['profile','tap','iab'], sticker:['story','tap','iab'], partner:['browse','scroll','tap','iab'], chat:['chat','msg','live','full','reply','confirm'],
   reelflick:['r1','live'],
+  reels:['live'],
   market:['browse','open','detail','pick','send','chat','reply','order','done']
 };
 const SCRIPT = {
@@ -1203,6 +1396,7 @@ const SCRIPT = {
   partner:[[700,'scroll'],[3800,'tap'],[4500,'iab']],
   chat:[[900,'msg'],[2100,'live'],[16000,'reply']],
   reelflick:[[2600,'live']],
+  reels:[],
   market:[]
 };
 
@@ -1229,6 +1423,7 @@ const secs = [...document.querySelectorAll('.fmt')].map((el, i) => ({
   bars: [...el.querySelectorAll('[data-bar]')], closeBtn: el.querySelector('[data-close]'),
   rtext: el.querySelector('[data-rtext]'), rpill: el.querySelector('[data-reward]'),
   steps: [...el.querySelectorAll('.steps li')],
+  reels: [...el.querySelectorAll('.mi[data-reel]')], rtracks: [...el.querySelectorAll('[data-rtrack]')], reelIdx: 0,
   state: el.dataset.state, timers: [], tick: null, tween: null, near: false, active: false, anim: false, canClose: false
 }));
 
@@ -1245,6 +1440,7 @@ function place(s, r, clip) {
 }
 function slotGeo(s) {
   if (s.kind === 'story') s.slot = s.el.querySelector(s.adIdx ? '[data-slot-a1]' : '[data-slot]');
+  if (s.kind === 'reels') s.slot = s.el.querySelector('[data-rslot="' + s.reelIdx + '"]');
   if (s.kind === 'chat') {
     const full = s.state === 'full';
     s.slot = s.el.querySelector(full ? '[data-slot-full]' : '[data-slot]');
@@ -1272,8 +1468,9 @@ function follow(s) {
   place(s, r, clip);
 }
 function feedTarget(s) {
-  const sc = s.scroller, max = sc.scrollHeight - sc.clientHeight;
-  return Math.max(0, Math.min(max, s.ad.offsetTop - Math.max(8, (sc.clientHeight - s.ad.offsetHeight) / 2)));
+  const sc = s.scroller, max = sc.scrollHeight - sc.clientHeight, dock = s.el.querySelector('.fb-dock');
+  const under = dock ? Math.max(0, sc.offsetTop + sc.clientHeight - dock.offsetTop + 6) : 0;   // strip of the feed that lies under the tab bar
+  return Math.max(0, Math.min(max, s.ad.offsetTop - Math.max(8, (sc.clientHeight - under - s.ad.offsetHeight) / 2)));
 }
 function tweenScroll(s, to, dur) {
   cancelAnimationFrame(s.tween);
@@ -1377,6 +1574,26 @@ function reply(s) {
   s.timers.push(setTimeout(() => { if (s.el.dataset.chat === 'reply') { s.el.dataset.chat = 'confirm'; if (s.state === 'full') s.fullFrom = 'confirm'; else setState(s, 'confirm'); chatBottom(s); } }, 2200));
 }
 
+// Reels: every reel is an interactive video. A swipe or scroll moves to the next reel. All three load when Reels opens and
+// stay loaded (silent) while it is open, so the next reel does not start loading only when it arrives.
+function reelSet(s, n) {
+  s.reelIdx = n; s.el.dataset.reel = String(n);
+  s.rtracks.forEach(t => { t.style.transform = 'translateY(-' + n * 100 + '%)'; });
+  s.reels.forEach((m, j) => m.classList.toggle('on', j === n));
+  s.el.querySelectorAll('[data-reel-go]').forEach(b => b.classList.toggle('on', +b.dataset.reelGo === n));
+}
+function reelGo(s, n) {
+  n = Math.max(0, Math.min(s.reels.length - 1, n));
+  if (n === s.reelIdx) return false;
+  const was = s.engaged, old = s.reels[s.reelIdx];
+  reelSet(s, n); s.reelMoved = true;
+  s.engaged = false; s.el.classList.remove('eng'); applyAudio(s, false);
+  if (was && old) old.querySelectorAll('iframe').forEach(reloadFrame);   // sound was on in the reel just left: restart it silent
+  return true;
+}
+// inside Reels: is another reel waiting below
+function hasNext() { const s = secs[mIdx]; return !!s && s.kind === 'reels' && s.reelIdx < s.reels.length - 1; }
+
 function clearAll(s) {
   s.timers.forEach(clearTimeout); s.timers = [];
   clearInterval(s.tick); s.tick = null;
@@ -1386,6 +1603,7 @@ function start(s) {
   clearAll(s);
   s.anim = false; s.media.style.transition = ''; s.canClose = false;
   if (s.kind === 'story') { s.adIdx = 0; s.el.dataset.ad = '0'; }
+  if (s.kind === 'reels') { reelSet(s, 0); s.reelMoved = false; }
   setState(s, ORDER[s.kind][0]);
   follow(s);
   if (s.kind === 'market') mpAuto(s);
@@ -1584,7 +1802,10 @@ secs.forEach(s => {
   s.el.querySelectorAll('[data-toprofile]').forEach(b => b.addEventListener('click', () => { if (s.state === 'reel') { stopTimers(s); setState(s, 'profile'); s.timers.push(setTimeout(() => openLink(s), 2200)); } }));
   s.el.querySelectorAll('[data-iabclose]').forEach(b => b.addEventListener('click', () => closeLink(s)));
   s.closeBtn?.addEventListener('click', e => { e.stopPropagation(); closePlay(s); });
-  s.el.querySelector('[data-replay]')?.addEventListener('click', () => start(s));
+  s.el.querySelector('[data-replay]')?.addEventListener('click', () => { start(s); if (s.kind === 'reels') disengage(s, true); });   // Reels: Replay restarts the videos
+  s.el.querySelectorAll('[data-reel-go]').forEach(b => b.addEventListener('click', () => { if (s !== current) return; markNav(); reelGo(s, +b.dataset.reelGo); }));
+  // Facebook's tab bar: Reels, Home and Marketplace open those prototypes
+  s.el.querySelectorAll('[data-dock] [data-tab]').forEach(b => b.addEventListener('click', () => { const k = { reels: 'reels', feed: 'feed', market: 'market' }[b.dataset.tab], i = secs.findIndex(x => x.kind === k); if (i >= 0 && i !== mIdx) userShow(i); }));
   s.el.querySelectorAll('[data-reply]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); reply(s); }));
   s.el.querySelectorAll('[data-full]').forEach(b => b.addEventListener('click', () => openFull(s)));
   s.el.querySelectorAll('[data-fullclose]').forEach(b => b.addEventListener('click', () => closeFull(s)));
@@ -1617,6 +1838,7 @@ secs.forEach(s => io.observe(s.el));
 // phone: one demo per page, chosen with the header arrows or a sideways swipe on the header
 const MT = [
   ['Sponsored post','Facebook Feed','var(--accent)'],
+  ['Sponsored reels','Facebook Reels','var(--cf)'],
   ['Rewarded, in a partner app','Playable ad','var(--accent)'],
   ['Message from a brand','Messenger','var(--link)'],
   ['Sponsored listing','Marketplace','var(--warn)']
@@ -1653,6 +1875,7 @@ function mShow(i) {
   const n = Math.max(0, Math.min(secs.length - 1, i));
   if (current && n === mIdx && current === secs[n]) return;  // already showing it: past the first or last format, do nothing
   mIdx = n;
+  secs.forEach(s => { if (s.kind === 'reels' && s !== current) reelSet(s, 0); });   // Reels always opens on its first reel
   const t = MT[mIdx] || ['', secs[mIdx].name, 'var(--accent)'];
   mh.style.setProperty('--lc', t[2]);
   mh.querySelector('[data-mlane]').textContent = t[0];
@@ -1666,6 +1889,7 @@ function mShow(i) {
   // every other format is fully unloaded, so nothing off-screen can make sound
   secs.forEach((s, j) => park(s, j === mIdx));
   activate(null); activate(secs[mIdx]);
+  if (window.roomMode) roomMode();
   document.querySelectorAll('.fmtlist button').forEach(b => b.classList.toggle('on', +b.dataset.go === mIdx));
   if (window.swipeDots) {
     swipeDots.querySelectorAll('span').forEach((d, j) => d.classList.toggle('on', j === mIdx));
@@ -1700,16 +1924,138 @@ document.querySelectorAll('.fmtlist').forEach(nav => {
   nav.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) userShow(+b.dataset.go); });
 });
 addEventListener('keydown', e => {
-  if (['ArrowDown','ArrowRight','PageDown'].includes(e.key)) { e.preventDefault(); userShow(mIdx + 1); }
-  if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); userShow(mIdx - 1); }
+  if (['ArrowDown','ArrowRight','PageDown'].includes(e.key)) { e.preventDefault(); stepBy(1); }
+  if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); stepBy(-1); }
 });
-// Formats change only from the list (laptop), the Formats button (phone) or the arrow keys.
-// Nothing scrolls or swipes between formats; lists inside a screen (a listing, a chat) still scroll on their own.
-let navd = false;
-function userShow(i) { navd = true; mShow(i); }
+// Scroll, swipe and drag work inside Reels only: they move from reel to reel and never change the format.
+// Formats change from the list (laptop), the Formats button (phone), the tab bar, or the arrow keys.
+// Lists inside a screen (a listing, a chat) still scroll on their own.
+let wAcc = 0, wLock = 0;
+function scrollerFor(el, dy) {
+  // nearest scrollable area under the cursor that can still move in this direction
+  for (; el && el !== document.body; el = el.parentElement) {
+    const cs = getComputedStyle(el);
+    if (!/(auto|scroll)/.test(cs.overflowY) || el.scrollHeight <= el.clientHeight + 1) continue;
+    if (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) return el;
+  }
+  return null;
+}
+addEventListener('wheel', e => {
+  holdWhileMoving();
+  if (mq.matches) return;
+  const now = Date.now();
+  if (scrollerFor(e.target, e.deltaY)) { wAcc = 0; wLock = now + 600; return; }
+  if (now < wLock) { wLock = now + 250; return; }
+  wAcc += e.deltaY; if (Math.abs(wAcc) < 120) return;
+  gestureShow(wAcc > 0 ? 1 : -1); wAcc = 0; wLock = now + 900;
+}, { passive: true });
+let tY = null, tX = 0, tT = 0, tEl = null;
+addEventListener('touchstart', e => { const t = e.touches[0]; tY = t.clientY; tX = t.clientX; tT = Date.now(); tEl = e.target; }, { passive: true });
+addEventListener('touchend', e => {
+  if (tY == null) return; const t = e.changedTouches[0]; const dy = tY - t.clientY, dx = tX - t.clientX, el = tEl; tY = null;
+  if (Date.now() - tT > 900 || Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
+  if (el && el.closest && el.closest('.mhead,.fmtlist')) return;
+  if (scrollerFor(el, dy)) return;
+  gestureShow(dy > 0 ? 1 : -1);
+}, { passive: true });
+let mDown = null;
+addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || !(e.target.closest && e.target.closest('.phone')) || !(current && current.kind === 'reels')) return;
+  mDown = { y: e.clientY, x: e.clientX, t: Date.now(), el: e.target };
+  try { e.target.setPointerCapture(e.pointerId); } catch (x) {}   // keep the release even if the drag ends over a video
+});
+addEventListener('pointerup', e => {
+  if (e.pointerType !== 'mouse' || !mDown) return; const d = mDown; mDown = null; const dy = d.y - e.clientY, dx = d.x - e.clientX;
+  if (Date.now() - d.t > 900 || Math.abs(dy) < 80 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
+  if (!(d.el && d.el.closest && d.el.closest('.phone'))) return;
+  if (scrollerFor(d.el, dy)) return;
+  gestureShow(dy > 0 ? 1 : -1);
+});
+// gestures reported by the videos that run inside the page (the ad tags)
+addEventListener('message', e => {
+  const d = e.data; if (!d || d.type !== 'flick-gesture') return;
+  if (typeof d.swipe === 'number') { gestureShow(d.swipe > 0 ? 1 : -1); return; }
+  if (typeof d.wheel === 'number' && !mq.matches) {
+    holdWhileMoving();
+    const now = Date.now(); if (now < wLock) { wLock = now + 250; return; }
+    wAcc += d.wheel; if (Math.abs(wAcc) < 120) return;
+    gestureShow(wAcc > 0 ? 1 : -1); wAcc = 0; wLock = now + 900;
+  }
+});
+let navd = false, navLock = 0;
+// Scroll hint, in Reels only: a finger swiping up on a phone, a mouse wheel turning on a laptop. It shows for as long as
+// another reel is waiting below.
+const cue = document.createElement('div'); cue.className = 'scroll-cue'; cue.setAttribute('aria-hidden', 'true');
+cue.innerHTML = '<span class="sc-phone"><i class="sc-track"></i><i class="sc-dot"></i><svg class="sc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14l5-5 5 5"/></svg></span>'
+  + '<span class="sc-mouse"><i class="sc-wheel"></i></span><b class="sc-word">Scroll</b>';
+document.body.appendChild(cue);
+let cueGeo = '';
+(function cueFollow() {
+  const show = current && current.kind === 'reels' && hasNext();
+  cue.classList.toggle('on', !!show);
+  if (show && !mq.matches) {   // laptop: beside the phone, on its right
+    const ph = current.el.querySelector('.phone'); if (ph) { const r = ph.getBoundingClientRect(), g = Math.round(r.right + 34) + ',' + Math.round(r.top + r.height / 2);
+      if (g !== cueGeo) { cueGeo = g; cue.style.left = Math.round(r.right + 34) + 'px'; cue.style.top = Math.round(r.top + r.height / 2) + 'px'; } }
+  } else if (cueGeo) { cueGeo = ''; cue.style.left = ''; cue.style.top = ''; }
+  requestAnimationFrame(cueFollow);
+})();
+// one swipe = one reel, whichever way it reaches the page (touch, wheel, a video handing on its scroll). A phone fling and a
+// trackpad keep scrolling for a second or two after the finger lifts; nothing moves again until that has died down.
+function holdWhileMoving() { const now = Date.now(); if (now < navLock) navLock = Math.max(navLock, now + 380); }
+function gestureShow(dir) {
+  if (Date.now() < navLock) { holdWhileMoving(); return; }
+  const s = secs[mIdx];
+  if (s && s.kind === 'reels' && s === current && reelGo(s, s.reelIdx + dir)) { markNav(); roomDrag(0, true); if (!hasNext() && typeof fjHint === 'function') setTimeout(fjHint, 1500); }
+}
+function markNav() { navd = true; navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); }
+function userShow(i) { markNav(); mShow(i); roomDrag(0, true); }
+// arrow keys: inside Reels they move between the reels first, and change format only past the first or last reel
+function stepBy(dir) {
+  const s = secs[mIdx];
+  if (s && s.kind === 'reels' && s === current && reelGo(s, s.reelIdx + dir)) { markNav(); roomDrag(0, true); return; }
+  userShow(mIdx + dir);
+}
+setInterval(() => {
+  if (!current || current.kind !== 'reels' || current.reelMoved || !hasNext()) return;   // a gentle nudge, in Reels only, until the first swipe
+  current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
+}, 6500);
+// Swipe and scroll over a video. A video is its own website inside the page, so its touches never reach this page; but once it
+// has nothing of its own to scroll, the browser hands the scroll on to the page. In Reels only, the page keeps some scroll room
+// above and below the screen and turns that scroll into a move to the next reel. On every other format the page cannot scroll.
+const ROOM = 700;
+const room = document.createElement('div'); room.className = 'scroll-room'; room.setAttribute('aria-hidden', 'true'); room.style.display = 'none';
+document.body.appendChild(room);
+function roomOn() { return document.documentElement.classList.contains('room'); }
+function roomHome() { if (roomOn() && Math.abs(scrollY - ROOM) > .5) scrollTo({ top: ROOM, left: 0, behavior: 'instant' }); }
+function roomMode() {
+  const on = !!(current && current.kind === 'reels');
+  if (on === roomOn()) { roomHome(); return; }
+  if (!on) scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  room.style.display = on ? '' : 'none'; document.documentElement.classList.toggle('room', on);
+  roomHome();
+}
+window.roomMode = roomMode;
+function roomDrag(d, settle) {
+  const ph = current && current.el.querySelector('.phone'); if (!ph) return;
+  document.querySelectorAll('.fmt .phone').forEach(x => { if (x !== ph && x.style.translate) { x.style.transition = ''; x.style.translate = ''; } });
+  ph.style.transition = settle ? 'translate .32s cubic-bezier(.2,.8,.2,1)' : 'none';
+  const v = Math.max(-90, Math.min(90, d * .55));
+  ph.style.translate = Math.abs(v) < .5 ? '' : '0 ' + (-v).toFixed(1) + 'px';
+}
+addEventListener('load', roomHome); addEventListener('resize', roomHome);
+let roomT = null;
+addEventListener('scroll', () => {
+  if (!roomOn()) return;
+  const d = scrollY - ROOM;
+  clearTimeout(roomT); holdWhileMoving();
+  if (Date.now() < navLock) { roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 90); return; }
+  roomDrag(d, false);
+  if (Math.abs(d) >= 70) { gestureShow(d > 0 ? 1 : -1); roomT = setTimeout(roomHome, 90); return; }
+  roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 140);
+}, { passive: true });
 
 // Phone view: a small draggable "Formats" button. A tap opens the list of formats; a tap on one shows it; "–" minimises it.
-const JUMP = [['Facebook Feed', 'Sponsored post'], ['Playable ad', 'Rewarded, in a partner app'], ['Messenger', 'Message from a brand'], ['Marketplace', 'Sponsored listing']];
+const JUMP = [['Facebook Feed', 'Sponsored post'], ['Facebook Reels', 'Sponsored reels'], ['Playable ad', 'Rewarded, in a partner app'], ['Messenger', 'Message from a brand'], ['Marketplace', 'Sponsored listing']];
 const fj = document.createElement('div'); fj.className = 'fmjump';
 fj.innerHTML = '<button type="button" class="fmj-pill" aria-label="Show formats"><i data-ic="menu"></i>Formats</button>'
   + '<div class="fmj-panel"><div class="fmj-top"><span>Formats</span><button type="button" class="fmj-min" aria-label="Minimise"></button></div>'
@@ -1725,7 +2071,7 @@ function fjPlace(x, y) {
 let fjAuto = true;   // true until the viewer drags the button; after that it stays where they put it
 function fjVideo(s) {
   // the part of the video that is on screen right now (null when none is showing)
-  const e = s.media.querySelector('flam-embed, iframe.cfr'); if (!e) return null;
+  const e = (s.media.querySelector('.mi.on') || s.media).querySelector('flam-embed, iframe.cfr'); if (!e) return null;
   if (getComputedStyle(s.media).opacity === '0') return null;
   const a = s.media.getBoundingClientRect(), b = e.getBoundingClientRect();
   const v = { left: Math.max(a.left, b.left, 0), right: Math.min(a.right, b.right, innerWidth), top: Math.max(a.top, b.top, 0), bottom: Math.min(a.bottom, b.bottom, innerHeight) };
@@ -1737,14 +2083,17 @@ function fjHomeY() {
   let y = null;
   if (s) {
     if (s.kind === 'feed') y = bot('[data-ad] .fb-cta');                                   // under the post's link strip
+    else if (s.kind === 'reels') { const f = s.el.querySelectorAll('.rl-frame')[s.reelIdx]; if (f) y = f.getBoundingClientRect().bottom - 6; }   // in the strip under the reel
     else if (s.kind === 'reward') y = s.state === 'play' ? null : bot('.cw-clue');          // game: under the clue
     else if (s.kind === 'chat') y = s.state === 'full' ? bot('[data-slot-full]') : (s.el.dataset.chat ? bot('.mcard') : null);   // under the message card
     else if (s.kind === 'market') y = ['browse', 'open'].includes(s.state) ? bot('.mp-spon') : ['detail', 'pick', 'send'].includes(s.state) ? bot('.mp-info') : null;   // under the listing's title and price
   }
   y = y == null ? H * .7 : y + 8;
   y = Math.max(8, Math.min(H - h - 8, y));
+  const dk = s && s.el.querySelector('.fb-dock'), dkOn = dk && !(s.kind === 'market' && !['browse', 'open'].includes(s.state));
+  if (dkOn) y = Math.min(y, dk.getBoundingClientRect().top - h - 3);   // above the tab bar
   const v = s && fjVideo(s), x0 = W - w - 8;
-  if (v && x0 < v.right && W - 8 > v.left && y < v.bottom + 6 && y + h > v.top - 6) y = v.bottom + 8 <= H - h - 8 ? v.bottom + 8 : Math.max(8, v.top - h - 8);
+  if (v && x0 < v.right && W - 8 > v.left && y < v.bottom + 6 && y + h > v.top - 6) y = v.bottom + 2 <= (dkOn ? dk.getBoundingClientRect().top - h - 3 : H - h - 8) ? Math.max(y, v.bottom + 2) : Math.max(8, v.top - h - 8);
   return Math.round(y);
 }
 function fjFit() { if (!mq.matches) return; if (fjAuto || !fjPos) fjPlace(innerWidth, fjHomeY()); else fjPlace(fjPos.x, fjPos.y); }
