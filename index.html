@@ -455,7 +455,7 @@ main{position:relative;z-index:1}
 .ms-comp .in{flex:1;height:38px;border-radius:20px;background:#F0F0F0;display:flex;align-items:center;padding:0 14px;color:#8a8d91;font-size:15px}
 
 /* ── crossword (Audience Network partner) ── */
-.cw{background:#F7F5F0;color:#1A1A1A}
+.cw{background:#F7F5F0;color:#1A1A1A;cursor:pointer}
 .cw-head{flex:none;display:flex;justify-content:space-between;align-items:center;padding:8px 18px 12px;border-bottom:1px solid #E3DFD6}
 .cw-head b{font-family:var(--f-serif);font-size:28px;font-weight:400;letter-spacing:-.01em}
 .cw-head small{display:block;font-size:12px;color:#6B675E;margin-top:2px}
@@ -517,6 +517,9 @@ main{position:relative;z-index:1}
 .fmj-pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px 0 10px;border-radius:17px;background:rgba(18,13,11,.78);border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 20px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:12.5px;font-weight:600;color:#fff;cursor:grab}
 .fmj-pill i[data-ic]{width:15px;height:15px}
 .fmj-panel{display:none;width:226px;border-radius:16px;background:rgba(18,13,11,.9);border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow:hidden}
+@keyframes fmjHint{0%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 0 rgba(255,255,255,.75);transform:scale(1)}30%{transform:scale(1.09)}70%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 14px rgba(255,255,255,0);transform:scale(1)}100%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 0 rgba(255,255,255,0);transform:scale(1)}}
+.fmjump.hint .fmj-pill{animation:fmjHint 1.5s ease-out 3;background:rgba(8,102,255,.95);border-color:rgba(255,255,255,.6)}
+.fmj-pill{transition:background .4s,border-color .4s}
 .fmjump.open .fmj-pill{display:none}
 .fmjump.open .fmj-panel{display:block}
 .fmj-top{display:flex;align-items:center;justify-content:space-between;padding:9px 8px 7px 13px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);cursor:grab}
@@ -553,34 +556,6 @@ main{position:relative;z-index:1}
   html body .mhead{display:none!important}
   :root{--mh:env(safe-area-inset-top,0px)!important}
 }
-/* swipe hint (phones): dots on the right edge, the current one longer; a soft chevron bobs for a few seconds */
-@keyframes peek{0%,100%{transform:translateY(0)}35%{transform:translateY(-22px)}60%{transform:translateY(0)}78%{transform:translateY(-6px)}}
-.fmt.peek .phone{animation:peek 1.05s cubic-bezier(.3,.7,.3,1)}
-/* scroll room: the page itself scrolls a little, invisibly, so swipes handed on by a Flick can change format */
-html.room,html.room body{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;scroll-behavior:auto!important;overscroll-behavior:none!important;scrollbar-width:none}
-html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
-.scroll-room{height:calc(100vh + 1400px);pointer-events:none}
-/* scroll cue */
-.scroll-cue{position:fixed;z-index:9200;pointer-events:none;opacity:0;transition:opacity .6s ease;display:flex;flex-direction:column;align-items:center;gap:10px;transform:translate(0,-50%);color:rgba(244,231,224,.78)}
-.scroll-cue.on{opacity:1}
-.scroll-cue .sc-phone{display:none}
-.sc-mouse{position:relative;width:22px;height:34px;border:1.6px solid currentColor;border-radius:12px;box-sizing:border-box}
-.sc-wheel{position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:currentColor;animation:scWheel 1.6s cubic-bezier(.4,0,.2,1) infinite}
-@keyframes scWheel{0%{transform:translateY(0);opacity:0}20%{opacity:1}70%{transform:translateY(9px);opacity:0}100%{opacity:0}}
-.sc-word{font:600 10px/1 var(--f-page,inherit);letter-spacing:.24em;text-transform:uppercase;writing-mode:vertical-rl;color:rgba(244,231,224,.55)}
-@media (max-width:760px){
-  .scroll-cue{left:50%!important;top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);transform:translateX(-50%);color:#fff}
-  .scroll-cue .sc-mouse,.scroll-cue .sc-word{display:none}
-  .scroll-cue .sc-phone{display:block;position:relative;width:38px;height:62px;border-radius:19px;background:rgba(12,9,8,.42);box-shadow:0 0 0 .5px rgba(255,255,255,.22),0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-  .sc-track{position:absolute;left:50%;top:14px;bottom:14px;width:2px;margin-left:-1px;border-radius:1px;background:linear-gradient(to top,rgba(255,255,255,0),rgba(255,255,255,.35))}
-  .sc-dot{position:absolute;left:50%;width:12px;height:12px;margin-left:-6px;bottom:10px;border-radius:50%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.7);animation:scFinger 1.9s cubic-bezier(.45,0,.2,1) infinite}
-  .sc-chev{position:absolute;left:50%;top:-20px;width:18px;height:18px;margin-left:-9px;color:rgba(255,255,255,.9);animation:scChev 1.9s ease-in-out infinite;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
-  @keyframes scFinger{0%{transform:translateY(0) scale(.6);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}65%{transform:translateY(-30px) scale(1);opacity:1}85%,100%{transform:translateY(-34px) scale(.6);opacity:0}}
-  @keyframes scChev{0%,30%{transform:translateY(4px);opacity:0}65%{transform:translateY(0);opacity:1}100%{transform:translateY(-4px);opacity:0}}
-}
-
-
-
 /* phone pager header (hidden on desktop) */
 .mhead{display:none;position:fixed;top:0;left:0;right:0;z-index:80;font-family:var(--f-page);height:var(--mh,60px);box-sizing:border-box;padding:env(safe-area-inset-top,0px) 8px 0;align-items:center;gap:8px;background:var(--bg);touch-action:pan-y}
 .mnav{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);display:flex;align-items:center;justify-content:center;flex:none}
@@ -1600,6 +1575,8 @@ secs.forEach(s => {
     if (s.kind === 'reward' && s.state !== 'offer') return;
     play(s);
   }));
+  // Playable ad: a tap anywhere on the game opens the ad (not only the button on the offer sheet)
+  if (s.kind === 'reward') s.screen.addEventListener('click', e => { if (e.target.closest('[data-media],.pc')) return; if (['browse', 'offer', 'done'].includes(s.state)) play(s); });
   s.el.querySelectorAll('[data-link]').forEach(b => b.addEventListener('click', () => openLink(s)));
   s.el.querySelectorAll('[data-toprofile]').forEach(b => b.addEventListener('click', () => { if (s.state === 'reel') { stopTimers(s); setState(s, 'profile'); s.timers.push(setTimeout(() => openLink(s), 2200)); } }));
   s.el.querySelectorAll('[data-iabclose]').forEach(b => b.addEventListener('click', () => closeLink(s)));
@@ -1723,113 +1700,10 @@ addEventListener('keydown', e => {
   if (['ArrowDown','ArrowRight','PageDown'].includes(e.key)) { e.preventDefault(); userShow(mIdx + 1); }
   if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); userShow(mIdx - 1); }
 });
-let wAcc = 0, wLock = 0;
-function scrollerFor(el, dy) {
-  // nearest scrollable area under the cursor that can still move in this direction
-  for (; el && el !== document.body; el = el.parentElement) {
-    const cs = getComputedStyle(el);
-    if (!/(auto|scroll)/.test(cs.overflowY) || el.scrollHeight <= el.clientHeight + 1) continue;
-    if (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) return el;
-  }
-  return null;
-}
-addEventListener('wheel', e => {
-  holdWhileMoving();
-  if (mq.matches) return;
-  const now = Date.now();
-  // content first: scroll the page inside the phone; switch format only after it reaches its end
-  if (scrollerFor(e.target, e.deltaY)) { wAcc = 0; wLock = now + 600; return; }
-  if (now < wLock) { wLock = now + 250; return; }
-  wAcc += e.deltaY; if (Math.abs(wAcc) < 120) return;
-  gestureShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
-}, { passive: true });
-// swipe up / down on the phone to change format (phone and web), unless the content under the finger can still scroll
-let tY = null, tX = 0, tT = 0, tEl = null;
-addEventListener('touchstart', e => { const t = e.touches[0]; tY = t.clientY; tX = t.clientX; tT = Date.now(); tEl = e.target; }, { passive: true });
-addEventListener('touchend', e => {
-  if (tY == null) return; const t = e.changedTouches[0]; const dy = tY - t.clientY, dx = tX - t.clientX, el = tEl; tY = null;
-  if (Date.now() - tT > 900 || Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
-  if (el && el.closest && el.closest('.mhead,.fmtlist')) return;
-  if (scrollerFor(el, dy)) return;
-  gestureShow(mIdx + (dy > 0 ? 1 : -1));
-}, { passive: true });
-let mDown = null;
-addEventListener('pointerdown', e => {
-  if (e.pointerType !== 'mouse' || !(e.target.closest && e.target.closest('.phone'))) return;
-  mDown = { y: e.clientY, x: e.clientX, t: Date.now(), el: e.target };
-  try { e.target.setPointerCapture(e.pointerId); } catch (x) {}   // keep the release even if the drag ends over a Flick
-});
-addEventListener('pointerup', e => {
-  if (e.pointerType !== 'mouse' || !mDown) return; const d = mDown; mDown = null; const dy = d.y - e.clientY, dx = d.x - e.clientX;
-  if (Date.now() - d.t > 900 || Math.abs(dy) < 80 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
-  if (!(d.el && d.el.closest && d.el.closest('.phone'))) return;
-  if (scrollerFor(d.el, dy)) return;
-  gestureShow(mIdx + (dy > 0 ? 1 : -1));
-});
-// gestures reported by Flicks that run inside the page (the ad tags)
-addEventListener('message', e => {
-  const d = e.data; if (!d || d.type !== 'flick-gesture') return;
-  if (typeof d.swipe === 'number') { gestureShow(mIdx + (d.swipe > 0 ? 1 : -1)); return; }
-  if (typeof d.wheel === 'number' && !mq.matches) {
-    holdWhileMoving();
-    const now = Date.now(); if (now < wLock) { wLock = now + 250; return; }
-    wAcc += d.wheel; if (Math.abs(wAcc) < 120) return;
-    gestureShow(mIdx + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = now + 900;
-  }
-});
-// until the viewer changes format once, the screen gives a gentle upward "peek" every few seconds
-let navd = false, navLock = 0;
-// Scroll cue: a finger swiping up on a phone, a mouse wheel turning on a laptop. It shows until the viewer has
-// moved to another format, and comes back after 20 s with no move, so nobody is left wondering what to do.
-const cue = document.createElement('div'); cue.className = 'scroll-cue'; cue.setAttribute('aria-hidden', 'true');
-cue.innerHTML = '<span class="sc-phone"><i class="sc-track"></i><i class="sc-dot"></i><svg class="sc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14l5-5 5 5"/></svg></span>'
-  + '<span class="sc-mouse"><i class="sc-wheel"></i></span><b class="sc-word">Scroll</b>';
-document.body.appendChild(cue);
-let cueLast = Date.now(), cueGeo = '';
-function cueOn() { return !navd || Date.now() - cueLast > 20000; }
-(function cueFollow() {
-  const show = cueOn() && current && mIdx < secs.length - 1 + (navd ? 1 : 0) && !/^(splash|home)$/.test(current.el.dataset.state);   // not over the Instagram launch screens
-  cue.classList.toggle('on', !!show);
-  if (show && !mq.matches) {   // laptop: beside the phone, on its right
-    const ph = current.el.querySelector('.phone'); if (ph) { const r = ph.getBoundingClientRect(), g = Math.round(r.right + 34) + ',' + Math.round(r.top + r.height / 2);
-      if (g !== cueGeo) { cueGeo = g; cue.style.left = Math.round(r.right + 34) + 'px'; cue.style.top = Math.round(r.top + r.height / 2) + 'px'; } }
-  }
-  requestAnimationFrame(cueFollow);
-})();
-// one swipe = one format, whichever way it reaches the page (touch, wheel, a Flick handing on its scroll)
-// A phone fling and a trackpad keep scrolling on their own for a second or two after the finger lifts. After a
-// format change, nothing moves again until that scrolling has died down, so one swipe never skips formats.
-function holdWhileMoving() { const now = Date.now(); if (now < navLock) navLock = Math.max(navLock, now + 380); }
-function gestureShow(i) { if (Date.now() < navLock) { holdWhileMoving(); return; } userShow(i); }
-function userShow(i) { navd = true; cueLast = Date.now(); navLock = Date.now() + 750; wLock = Math.max(wLock, Date.now() + 750); document.querySelectorAll('.fmt.peek').forEach(x => x.classList.remove('peek')); mShow(i); roomDrag(0, true); }
-setInterval(() => {
-  if (navd || !current || mIdx >= secs.length - 1) return;
-  current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
-}, 6500);
-// Swipe and scroll over a Flick. A Flick is its own website inside the page, so its touches never reach this page;
-// but once the Flick has nothing of its own to scroll, the browser hands the scroll on to the page. The page keeps
-// some scroll room above and below the screen and turns that scroll into a format change; the phone follows the finger.
-const ROOM = 700;
-const room = document.createElement('div'); room.className = 'scroll-room'; room.setAttribute('aria-hidden', 'true');
-document.body.appendChild(room); document.documentElement.classList.add('room');
-function roomHome() { if (Math.abs(scrollY - ROOM) > .5) scrollTo({ top: ROOM, left: 0, behavior: 'instant' }); }
-function roomDrag(d, settle) {
-  const ph = current && current.el.querySelector('.phone'); if (!ph) return;
-  document.querySelectorAll('.fmt .phone').forEach(x => { if (x !== ph && x.style.translate) { x.style.transition = ''; x.style.translate = ''; } });
-  ph.style.transition = settle ? 'translate .32s cubic-bezier(.2,.8,.2,1)' : 'none';
-  const v = Math.max(-90, Math.min(90, d * .55));
-  ph.style.translate = Math.abs(v) < .5 ? '' : '0 ' + (-v).toFixed(1) + 'px';
-}
-roomHome(); addEventListener('load', roomHome); addEventListener('resize', roomHome);
-let roomT = null;
-addEventListener('scroll', () => {
-  const d = scrollY - ROOM;
-  clearTimeout(roomT); holdWhileMoving();
-  if (Date.now() < navLock) { roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 90); return; }
-  roomDrag(d, false);
-  if (Math.abs(d) >= 70) { gestureShow(mIdx + (d > 0 ? 1 : -1)); roomT = setTimeout(roomHome, 90); return; }
-  roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 140);
-}, { passive: true });
+// Formats change only from the list (laptop), the Formats button (phone) or the arrow keys.
+// Nothing scrolls or swipes between formats; lists inside a screen (a listing, a chat) still scroll on their own.
+let navd = false;
+function userShow(i) { navd = true; mShow(i); }
 
 // Phone view: a small draggable "Formats" button. A tap opens the list of formats; a tap on one shows it; "–" minimises it.
 const JUMP = [['Facebook Feed', 'Sponsored post'], ['Playable ad', 'Rewarded, in a partner app'], ['Messenger', 'Message from a brand'], ['Marketplace', 'Sponsored listing']];
@@ -1838,19 +1712,29 @@ fj.innerHTML = '<button type="button" class="fmj-pill" aria-label="Show formats"
   + '<div class="fmj-panel"><div class="fmj-top"><span>Formats</span><button type="button" class="fmj-min" aria-label="Minimise"></button></div>'
   + JUMP.map((t, i) => '<button type="button" class="fmj-item" data-jump="' + i + '"><span class="n">' + (i + 1) + '</span><b>' + t[0] + '</b><small>' + t[1] + '</small></button>').join('') + '</div>';
 document.body.appendChild(fj); paintIcons(fj);
-let fjPos = null, fjDrag = null;
+let fjPos = null, fjDrag = null, fjEat = 0;
+addEventListener('click', e => { if (Date.now() < fjEat && !fj.contains(e.target)) { e.stopPropagation(); e.preventDefault(); } }, true);
 function fjPlace(x, y) {
   const w = fj.offsetWidth || 110, h = fj.offsetHeight || 34;
   fjPos = { x: Math.max(8, Math.min(innerWidth - w - 8, x)), y: Math.max(8, Math.min(innerHeight - h - 8, y)) };
   fj.style.left = fjPos.x + 'px'; fj.style.top = fjPos.y + 'px';
 }
-function fjFit() { if (!mq.matches) return; if (!fjPos) fjPlace(innerWidth, 112); else fjPlace(fjPos.x, fjPos.y); }
+const fjHomeY = () => Math.round(innerHeight * .7);   // lower right, a little above the bottom
+function fjFit() { if (!mq.matches) return; if (!fjPos) fjPlace(innerWidth, fjHomeY()); else fjPlace(fjPos.x, fjPos.y); }
+let fjUp = false, fjUsed = false, fjBack = null;
 function fjOpen(on) {
-  const right = fj.getBoundingClientRect().right;   // the list opens and closes from the button's right edge, so it stays where it was put
+  // the list opens from the button's right edge, upward when the button sits low; minimising puts the button back exactly where it was
+  const p = fjPos || { x: 0, y: 0 }, w = fj.offsetWidth, h = fj.offsetHeight;
+  if (on) { fjUp = p.y + h / 2 > innerHeight / 2; fjUsed = true; fj.classList.remove('hint'); fjBack = { x: p.x, y: p.y, px: 0, py: 0 }; }
   fj.classList.toggle('open', on);
   fj.querySelectorAll('[data-jump]').forEach(b => b.classList.toggle('on', +b.dataset.jump === mIdx));
-  fjPlace(right - fj.offsetWidth, fjPos ? fjPos.y : 112);
+  if (on) { fjPlace(p.x + w - fj.offsetWidth, fjUp ? p.y + h - fj.offsetHeight : p.y); fjBack.px = fjPos.x; fjBack.py = fjPos.y; }
+  else if (fjBack && fjBack.px === p.x && fjBack.py === p.y) fjPlace(fjBack.x, fjBack.y);   // the list was not dragged
+  else fjPlace(p.x + w - fj.offsetWidth, fjUp ? p.y + h - fj.offsetHeight : p.y);
 }
+// so nobody misses it: the button glows a few times after 3.5 s, and again now and then until it has been opened once
+function fjHint() { if (fjUsed || !mq.matches || fj.classList.contains('open')) return; fj.classList.remove('hint'); void fj.offsetWidth; fj.classList.add('hint'); setTimeout(() => fj.classList.remove('hint'), 4600); }
+setTimeout(fjHint, 3500); setInterval(fjHint, 14000);
 fj.addEventListener('pointerdown', e => {
   fjDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, px: fjPos ? fjPos.x : 0, py: fjPos ? fjPos.y : 0, moved: false };
   try { fj.setPointerCapture(e.pointerId); } catch (x) {}
@@ -1867,6 +1751,7 @@ function fjEnd(e) {
   if (d.moved || e.type === 'pointercancel') return;   // it was a drag, not a tap
   const t = document.elementFromPoint(e.clientX, e.clientY), hit = t && t.closest ? t : null;
   if (!hit || !fj.contains(hit)) return;
+  fjEat = Date.now() + 500;   // the tap belongs to the button or its list: it must not also land on the screen underneath once the list closes
   const item = hit.closest('[data-jump]');
   if (item) { fjOpen(false); userShow(+item.dataset.jump); return; }
   if (hit.closest('.fmj-min')) { fjOpen(false); return; }
