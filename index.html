@@ -563,9 +563,6 @@ main{position:relative;z-index:1}
 @keyframes peek{0%,100%{transform:translateY(0)}35%{transform:translateY(-22px)}60%{transform:translateY(0)}78%{transform:translateY(-6px)}}
 .fmt.peek .phone{animation:peek 1.05s cubic-bezier(.3,.7,.3,1)}
 /* scroll room: the page itself scrolls a little, invisibly, so swipes handed on by a Flick can change format */
-html.room,html.room body{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;scroll-behavior:auto!important;overscroll-behavior:none!important;scrollbar-width:none}
-html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
-.scroll-room{height:calc(100vh + 1400px);pointer-events:none}
 /* scroll cue */
 .scroll-cue{position:fixed;z-index:9200;pointer-events:none;opacity:0;transition:opacity .6s ease;display:flex;flex-direction:column;align-items:center;gap:10px;transform:translate(0,-50%);color:rgba(244,231,224,.78)}
 .scroll-cue.on{opacity:1}
@@ -613,10 +610,13 @@ html.room::-webkit-scrollbar,html.room body::-webkit-scrollbar{display:none}
 .fmt[data-kind="reels"] .media .mi[data-reel] > *{position:relative}
 .fmt[data-kind="reels"] .media iframe.cfr{background:transparent}
 .fmt[data-kind="reels"] .media .mi[data-reel] .flick-lazy{display:contents}
-.fmt[data-kind="reels"] .media .mi[data-reel] flam-embed{position:relative;flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
+.fmt[data-kind="reels"] .media .mi[data-reel] flam-embed{position:relative;flex:none;width:100cqw!important}
+.fmt[data-kind="reels"] .media .mi[data-reel] > iframe.cfr{flex:none;width:100cqw;height:calc(100cqw * 16 / 9)}
 .rl-ov{z-index:25;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.rl-box{position:absolute;left:0;right:0;top:var(--sbh);bottom:0;box-sizing:border-box;padding-bottom:var(--rl-band);container-type:size;display:flex;align-items:flex-end;justify-content:center}
-.rl-frame{position:relative;flex:none;width:min(100cqw, calc(100cqh * 9 / 16));height:min(100cqh, calc(100cqw * 16 / 9))}
+.rl-box{position:absolute;left:0;right:0;top:var(--sbh);bottom:0;box-sizing:border-box;padding-bottom:var(--rl-band);container-type:size;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.rl-frame{position:relative;flex:none;width:100cqw;height:calc(100cqw * 16 / 9)}
+/* swipe area over the middle of each video, clear of every video's own buttons (bottom row, right column, top-left logo, mute) */
+.rl-catch{position:absolute;left:0;top:14%;width:70%;height:64%;pointer-events:auto;touch-action:none}
 /* Facebook's rail: like, comment, share, save, more. It stops just above each video's mute button; taps pass through it. */
 .rl-rail{position:absolute;right:7px;bottom:7%;display:flex;flex-direction:column;align-items:center;gap:15px;font-size:11.5px;font-weight:600;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .rl-rail span{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -853,7 +853,10 @@ button.tag.on{background:rgba(237,180,158,.14);border-color:rgba(237,180,158,.5)
 @media (max-width:760px){
   :root{--sbh:0px;--tbh:0px;--mh:calc(60px + env(safe-area-inset-top,0px))}
   .tabbar,.iab-nav{display:none!important}
-  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  /* the page is pinned: it cannot scroll at all, so the browser's own bars stay exactly as they are */
+  html{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{position:fixed;left:0;top:0;right:0;bottom:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+  .fmt[data-kind="reels"] .screen{touch-action:none}
   .nav,.hero,.lane,.copy,.closing,.sb,.island{display:none!important}
   .mhead{display:flex!important}
   .fmt{position:fixed;left:0;right:0;top:var(--mh);bottom:0;min-height:0;height:auto;display:none;padding:0 0 env(safe-area-inset-bottom,0px)}
@@ -1073,16 +1076,19 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
     <!-- Reels UI over each video: Facebook's action rail, and the profile row in the strip under the video. Taps pass through to the video. -->
     <div class="cf-track rl-ov" data-rtrack>
       <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-catch"></div>
         <div class="rl-rail"><span><i data-ic="like"></i>32.8K</span><span><i data-ic="comment"></i>249</span><span><i data-ic="share"></i>625</span><span><i data-ic="bookmark"></i>4.3K</span><span><i data-ic="more"></i></span></div>
       </div>
         <div class="rl-meta"><span class="av" style="background:#b5446e">M</span><span class="nm"><b>Maya Collins<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
       </div></div>
       <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-catch"></div>
         <div class="rl-rail"><span><i data-ic="like"></i>48.2K</span><span><i data-ic="comment"></i>612</span><span><i data-ic="share"></i>731</span><span><i data-ic="bookmark"></i>9.1K</span><span><i data-ic="more"></i></span></div>
       </div>
         <div class="rl-meta"><span class="av" style="background:#8a6a2f">L</span><span class="nm"><b>Luna Jewelry<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
       </div></div>
       <div><div class="rl-box"><div class="rl-frame">
+        <div class="rl-catch"></div>
         <div class="rl-rail"><span><i data-ic="like"></i>24.6K</span><span><i data-ic="comment"></i>302</span><span><i data-ic="share"></i>286</span><span><i data-ic="bookmark"></i>2.7K</span><span><i data-ic="more"></i></span></div>
       </div>
         <div class="rl-meta"><span class="av" style="background:#2f5d8a">N</span><span class="nm"><b>Northpeak<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
@@ -1889,7 +1895,6 @@ function mShow(i) {
   // every other format is fully unloaded, so nothing off-screen can make sound
   secs.forEach((s, j) => park(s, j === mIdx));
   activate(null); activate(secs[mIdx]);
-  if (window.roomMode) roomMode();
   document.querySelectorAll('.fmtlist button').forEach(b => b.classList.toggle('on', +b.dataset.go === mIdx));
   if (window.swipeDots) {
     swipeDots.querySelectorAll('span').forEach((d, j) => d.classList.toggle('on', j === mIdx));
@@ -2019,40 +2024,9 @@ setInterval(() => {
   if (!current || current.kind !== 'reels' || current.reelMoved || !hasNext()) return;   // a gentle nudge, in Reels only, until the first swipe
   current.el.classList.add('peek'); setTimeout(() => current && current.el.classList.remove('peek'), 1100);
 }, 6500);
-// Swipe and scroll over a video. A video is its own website inside the page, so its touches never reach this page; but once it
-// has nothing of its own to scroll, the browser hands the scroll on to the page. In Reels only, the page keeps some scroll room
-// above and below the screen and turns that scroll into a move to the next reel. On every other format the page cannot scroll.
-const ROOM = 700;
-const room = document.createElement('div'); room.className = 'scroll-room'; room.setAttribute('aria-hidden', 'true'); room.style.display = 'none';
-document.body.appendChild(room);
-function roomOn() { return document.documentElement.classList.contains('room'); }
-function roomHome() { if (roomOn() && Math.abs(scrollY - ROOM) > .5) scrollTo({ top: ROOM, left: 0, behavior: 'instant' }); }
-function roomMode() {
-  const on = !!(current && current.kind === 'reels');
-  if (on === roomOn()) { roomHome(); return; }
-  if (!on) scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  room.style.display = on ? '' : 'none'; document.documentElement.classList.toggle('room', on);
-  roomHome();
-}
-window.roomMode = roomMode;
-function roomDrag(d, settle) {
-  const ph = current && current.el.querySelector('.phone'); if (!ph) return;
-  document.querySelectorAll('.fmt .phone').forEach(x => { if (x !== ph && x.style.translate) { x.style.transition = ''; x.style.translate = ''; } });
-  ph.style.transition = settle ? 'translate .32s cubic-bezier(.2,.8,.2,1)' : 'none';
-  const v = Math.max(-90, Math.min(90, d * .55));
-  ph.style.translate = Math.abs(v) < .5 ? '' : '0 ' + (-v).toFixed(1) + 'px';
-}
-addEventListener('load', roomHome); addEventListener('resize', roomHome);
-let roomT = null;
-addEventListener('scroll', () => {
-  if (!roomOn()) return;
-  const d = scrollY - ROOM;
-  clearTimeout(roomT); holdWhileMoving();
-  if (Date.now() < navLock) { roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 90); return; }
-  roomDrag(d, false);
-  if (Math.abs(d) >= 70) { gestureShow(d > 0 ? 1 : -1); roomT = setTimeout(roomHome, 90); return; }
-  roomT = setTimeout(() => { roomHome(); roomDrag(0, true); }, 140);
-}, { passive: true });
+// The page itself never scrolls (a scrolling page makes phone browsers slide their bars in and out). Swipes in Reels are read
+// straight from the touch: on the strip, on the swipe area over each video, and inside the two ad-tag videos, which report theirs.
+function roomDrag() {}
 
 // Phone view: a small draggable "Formats" button. A tap opens the list of formats; a tap on one shows it; "–" minimises it.
 const JUMP = [['Facebook Feed', 'Sponsored post'], ['Facebook Reels', 'Sponsored reels'], ['Playable ad', 'Rewarded, in a partner app'], ['Messenger', 'Message from a brand'], ['Marketplace', 'Sponsored listing']];
