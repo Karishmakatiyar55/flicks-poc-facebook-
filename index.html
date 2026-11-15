@@ -971,7 +971,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
     <nav class="fmtlist" aria-label="Formats"></nav>
     <div class="eyebrow"><b>03</b><span class="rule"></span><span>Messenger</span></div>
     <h2>Try it in the chat, <span class="serif">reply with the pick.</span></h2>
-    <p class="one">The sofa swaps inside West Elm's message. The reply goes back in the same thread.</p>
+    <p class="one">The chair swaps inside West Elm's message. The reply goes back in the same thread.</p>
     <div class="tags"><span class="tag ">West Elm</span><span class="tag ">Messenger</span></div>
     <ol class="steps"><li data-at="live">Message</li><li data-at="reply">Reply</li><li data-at="confirm">Brand confirms</li></ol>
     <button class="replay" data-replay><i data-ic="replay"></i>Replay</button>
@@ -983,14 +983,14 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
     <div class="ms-head"><i data-ic="back"></i><span class="av" style="background:#5a4632">W</span><span class="nm"><b>West Elm<i data-ic="verified"></i></b><small>Typically replies instantly</small></span><span class="acts"><i data-ic="phone"></i><i data-ic="video"></i></span></div>
     <div class="ms-body" data-clip data-ms-scroll>
       <span class="ms-day">Today 6:42 PM</span>
-      <div class="bub out">Hi! Is the Harmony sofa back in a lighter color?</div>
-      <div class="row-in"><span class="av" style="background:#5a4632">W</span><div class="col"><div class="bub in">It is. Oatmeal is back, plus three new shades this week.</div></div></div>
+      <div class="bub out">Hi! Do you have any accent chairs in stock right now?</div>
+      <div class="row-in"><span class="av" style="background:#5a4632">W</span><div class="col"><div class="bub in">We do. Three new accent chairs arrived this week.</div></div></div>
       <div class="typing t1"><i></i><i></i><i></i></div>
       <div class="row-in new"><span class="av" style="background:#5a4632">W</span><div class="col">
-        <div class="bub in">Not sure which one? Try each sofa in a real living room, right here.</div>
+        <div class="bub in">Not sure which one? Try each chair in a real living room, right here.</div>
         <div class="mcard">
           <div class="mcard-media" data-slot></div>
-          <div class="mcard-tx"><b>Harmony Sofa</b><small>westelm.com</small></div>
+          <div class="mcard-tx"><b>Accent chairs</b><small>westelm.com</small></div>
           <div class="mcard-btns"><button type="button" data-reply>I'll take this one</button><button type="button" data-full>View full screen</button></div>
         </div>
       </div></div>
@@ -1001,7 +1001,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
     </div>
     <div class="ms-comp"><i data-ic="plus"></i><i data-ic="camera"></i><span class="in">Aa</span><i data-ic="like"></i></div>
     <div class="ms-full" aria-hidden="true">
-      <div class="msf-bar"><button type="button" data-fullclose aria-label="Close"><i data-ic="x"></i></button><span class="msf-t"><b>West Elm</b><small>Harmony Sofa</small></span></div>
+      <div class="msf-bar"><button type="button" data-fullclose aria-label="Close"><i data-ic="x"></i></button><span class="msf-t"><b>West Elm</b><small>Accent chairs</small></span></div>
       <div class="msf-stage"><div class="msf-slot" data-slot-full></div></div>
       <div class="msf-foot"><button type="button" data-reply>I'll take this one</button></div>
     </div>
@@ -1386,7 +1386,7 @@ function closeFull(s) {
   if (s.kind !== 'chat' || s.state !== 'full') return;
   chatMove(s, s.fullFrom || 'live'); s.fullFrom = null;
 }
-// Messenger: reply to the brand with the sofa that is showing
+// Messenger: reply to the brand with the chair that is showing
 function reply(s) {
   if (s.kind !== 'chat' || s.el.dataset.chat !== 'live') return;
   stopTimers(s);
