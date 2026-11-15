@@ -517,9 +517,12 @@ main{position:relative;z-index:1}
 .fmj-pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px 0 10px;border-radius:17px;background:rgba(18,13,11,.78);border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 20px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:12.5px;font-weight:600;color:#fff;cursor:grab}
 .fmj-pill i[data-ic]{width:15px;height:15px}
 .fmj-panel{display:none;width:226px;border-radius:16px;background:rgba(18,13,11,.9);border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow:hidden}
-@keyframes fmjHint{0%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 0 rgba(255,255,255,.75);transform:scale(1)}30%{transform:scale(1.09)}70%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 14px rgba(255,255,255,0);transform:scale(1)}100%{box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 0 rgba(255,255,255,0);transform:scale(1)}}
-.fmjump.hint .fmj-pill{animation:fmjHint 1.5s ease-out 3;background:rgba(8,102,255,.95);border-color:rgba(255,255,255,.6)}
-.fmj-pill{transition:background .4s,border-color .4s}
+.fmj-pill{position:relative}
+.fmjump.fmj-auto{transition:left .35s cubic-bezier(.2,.8,.2,1),top .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes fmjPop{0%,45%,100%{transform:scale(1)}20%{transform:scale(1.07)}}
+@keyframes fmjRing{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.2,1.55)}}
+.fmjump.fmj-glow .fmj-pill{animation:fmjPop 1.4s cubic-bezier(.3,.7,.3,1) 3}
+.fmjump.fmj-glow .fmj-pill::after{content:"";position:absolute;inset:-1px;border-radius:inherit;border:2px solid #0866FF;background:none;opacity:0;pointer-events:none;animation:fmjRing 1.4s ease-out 3}
 .fmjump.open .fmj-pill{display:none}
 .fmjump.open .fmj-panel{display:block}
 .fmj-top{display:flex;align-items:center;justify-content:space-between;padding:9px 8px 7px 13px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);cursor:grab}
@@ -1719,13 +1722,39 @@ function fjPlace(x, y) {
   fjPos = { x: Math.max(8, Math.min(innerWidth - w - 8, x)), y: Math.max(8, Math.min(innerHeight - h - 8, y)) };
   fj.style.left = fjPos.x + 'px'; fj.style.top = fjPos.y + 'px';
 }
-const fjHomeY = () => Math.round(innerHeight * .7);   // lower right, a little above the bottom
-function fjFit() { if (!mq.matches) return; if (!fjPos) fjPlace(innerWidth, fjHomeY()); else fjPlace(fjPos.x, fjPos.y); }
+let fjAuto = true;   // true until the viewer drags the button; after that it stays where they put it
+function fjVideo(s) {
+  // the part of the video that is on screen right now (null when none is showing)
+  const e = s.media.querySelector('flam-embed, iframe.cfr'); if (!e) return null;
+  if (getComputedStyle(s.media).opacity === '0') return null;
+  const a = s.media.getBoundingClientRect(), b = e.getBoundingClientRect();
+  const v = { left: Math.max(a.left, b.left, 0), right: Math.min(a.right, b.right, innerWidth), top: Math.max(a.top, b.top, 0), bottom: Math.min(a.bottom, b.bottom, innerHeight) };
+  return v.right - v.left > 20 && v.bottom - v.top > 20 ? v : null;
+}
+function fjHomeY() {
+  const s = secs[mIdx], H = innerHeight, W = innerWidth, w = fj.offsetWidth || 96, h = fj.offsetHeight || 34;
+  const bot = sel => { const el = s && s.el.querySelector(sel); if (!el) return null; const r = el.getBoundingClientRect(); return r.height > 0 ? r.bottom : null; };
+  let y = null;
+  if (s) {
+    if (s.kind === 'feed') y = bot('[data-ad] .fb-cta');                                   // under the post's link strip
+    else if (s.kind === 'reward') y = s.state === 'play' ? null : bot('.cw-clue');          // game: under the clue
+    else if (s.kind === 'chat') y = s.state === 'full' ? bot('[data-slot-full]') : (s.el.dataset.chat ? bot('.mcard') : null);   // under the message card
+    else if (s.kind === 'market') y = ['browse', 'open'].includes(s.state) ? bot('.mp-spon') : ['detail', 'pick', 'send'].includes(s.state) ? bot('.mp-info') : null;   // under the listing's title and price
+  }
+  y = y == null ? H * .7 : y + 8;
+  y = Math.max(8, Math.min(H - h - 8, y));
+  const v = s && fjVideo(s), x0 = W - w - 8;
+  if (v && x0 < v.right && W - 8 > v.left && y < v.bottom + 6 && y + h > v.top - 6) y = v.bottom + 8 <= H - h - 8 ? v.bottom + 8 : Math.max(8, v.top - h - 8);
+  return Math.round(y);
+}
+function fjFit() { if (!mq.matches) return; if (fjAuto || !fjPos) fjPlace(innerWidth, fjHomeY()); else fjPlace(fjPos.x, fjPos.y); }
+fj.classList.add('fmj-auto');
+setInterval(() => { if (fjAuto && mq.matches && !fjDrag && !fj.classList.contains('open')) { const y = fjHomeY(); if (!fjPos || Math.abs(y - fjPos.y) > 1) fjPlace(innerWidth, y); } }, 200);
 let fjUp = false, fjUsed = false, fjBack = null;
 function fjOpen(on) {
   // the list opens from the button's right edge, upward when the button sits low; minimising puts the button back exactly where it was
   const p = fjPos || { x: 0, y: 0 }, w = fj.offsetWidth, h = fj.offsetHeight;
-  if (on) { fjUp = p.y + h / 2 > innerHeight / 2; fjUsed = true; fj.classList.remove('hint'); fjBack = { x: p.x, y: p.y, px: 0, py: 0 }; }
+  if (on) { fjUp = p.y + h / 2 > innerHeight / 2; fjUsed = true; fj.classList.remove('fmj-glow'); fjBack = { x: p.x, y: p.y, px: 0, py: 0 }; }
   fj.classList.toggle('open', on);
   fj.querySelectorAll('[data-jump]').forEach(b => b.classList.toggle('on', +b.dataset.jump === mIdx));
   if (on) { fjPlace(p.x + w - fj.offsetWidth, fjUp ? p.y + h - fj.offsetHeight : p.y); fjBack.px = fjPos.x; fjBack.py = fjPos.y; }
@@ -1733,7 +1762,7 @@ function fjOpen(on) {
   else fjPlace(p.x + w - fj.offsetWidth, fjUp ? p.y + h - fj.offsetHeight : p.y);
 }
 // so nobody misses it: the button glows a few times after 3.5 s, and again now and then until it has been opened once
-function fjHint() { if (fjUsed || !mq.matches || fj.classList.contains('open')) return; fj.classList.remove('hint'); void fj.offsetWidth; fj.classList.add('hint'); setTimeout(() => fj.classList.remove('hint'), 4600); }
+function fjHint() { if (fjUsed || !mq.matches || fj.classList.contains('open')) return; fj.classList.remove('fmj-glow'); void fj.offsetWidth; fj.classList.add('fmj-glow'); setTimeout(() => fj.classList.remove('fmj-glow'), 4400); }
 setTimeout(fjHint, 3500); setInterval(fjHint, 14000);
 fj.addEventListener('pointerdown', e => {
   fjDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, px: fjPos ? fjPos.x : 0, py: fjPos ? fjPos.y : 0, moved: false };
@@ -1743,7 +1772,7 @@ fj.addEventListener('pointermove', e => {
   if (!fjDrag || e.pointerId !== fjDrag.id) return;
   const dx = e.clientX - fjDrag.x, dy = e.clientY - fjDrag.y;
   if (!fjDrag.moved && Math.hypot(dx, dy) < 7) return;
-  fjDrag.moved = true; fjPlace(fjDrag.px + dx, fjDrag.py + dy);
+  fjDrag.moved = true; fjAuto = false; fj.classList.remove('fmj-auto'); fjPlace(fjDrag.px + dx, fjDrag.py + dy);
 });
 function fjEnd(e) {
   if (!fjDrag || e.pointerId !== fjDrag.id) return;
