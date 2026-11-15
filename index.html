@@ -602,9 +602,10 @@ main{position:relative;z-index:1}
    The video stops above a strip that holds the profile row and the tab bar, so nothing sits on a video's own swap buttons. */
 .fmt[data-kind="reels"]{--rl-band:calc(var(--dk-b) + var(--dk-h) + 44px)}
 .rl-slot{position:absolute;left:0;right:0;top:var(--sbh);bottom:0}
-.fmt[data-kind="reels"] .cf-track{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.fmt[data-kind="reels"] .cf-track{transition:transform .36s cubic-bezier(.2,.8,.2,1);will-change:transform}
 .fmt[data-kind="reels"] .media .mi[data-reel]{position:absolute;inset:0;box-sizing:border-box;padding-bottom:var(--rl-band);align-items:flex-end}
-.fmt[data-kind="reels"] .media .mi[data-reel]:not(.on){opacity:0;pointer-events:none!important}
+.fmt[data-kind="reels"] .media .mi[data-reel]:not(.on){pointer-events:none!important}
+.fmt[data-kind="reels"] .media{overflow:visible;background:none!important}
 .fmt[data-kind="reels"] .media .mi[data-reel]::before{content:"";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2.5px solid rgba(255,255,255,.16);border-top-color:rgba(255,255,255,.85);animation:rlSpin .8s linear infinite}
 @keyframes rlSpin{to{transform:rotate(360deg)}}
 .fmt[data-kind="reels"] .media .mi[data-reel] > *{position:relative}
@@ -616,7 +617,9 @@ main{position:relative;z-index:1}
 .rl-box{position:absolute;left:0;right:0;top:var(--sbh);bottom:0;box-sizing:border-box;padding-bottom:var(--rl-band);container-type:size;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
 .rl-frame{position:relative;flex:none;width:100cqw;height:calc(100cqw * 16 / 9)}
 /* swipe area over the middle of each video, clear of every video's own buttons (bottom row, right column, top-left logo, mute) */
-.rl-catch{position:absolute;left:0;top:14%;width:70%;height:64%;pointer-events:auto;touch-action:none}
+.rl-catch{position:absolute;left:0;top:0;width:100%;height:80%;pointer-events:auto;touch-action:none}   /* buttons along the bottom stay free */
+.rl-catch.nk{height:53%}                         /* necklace: its buttons run down the right side from about halfway */
+.rl-catch.nk2{top:53%;width:68%;height:31%}
 /* Facebook's rail: like, comment, share, save, more. It stops just above each video's mute button; taps pass through it. */
 .rl-rail{position:absolute;right:7px;bottom:7%;display:flex;flex-direction:column;align-items:center;gap:15px;font-size:11.5px;font-weight:600;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .rl-rail span{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -768,7 +771,7 @@ button.tag.on{background:rgba(237,180,158,.14);border-color:rgba(237,180,158,.5)
 .fmt[data-state="play"] .media .mi:not(.full){height:100%;width:100%;box-sizing:border-box;padding:calc(var(--sbh) + 52px) 0 94px;display:flex;align-items:center;justify-content:center;container-type:size}
 .fmt[data-state="play"] .media .mi:not(.full) :is(.ad0,.ad1,.flick-lazy){display:contents}
 .fmt[data-state="play"] .media .mi:not(.full) flam-embed{flex:none;width:min(100cqw, calc(100cqh * 9 / 16))!important}
-.fmt[data-state="play"] .media .mi:not(.full) flam-embed[style*="1080/1080"]{width:min(100cqw, 100cqh)!important}
+.fmt[data-state="play"] .media .mi:not(.full) .flick-lazy[data-ar="1080/1080"] flam-embed{width:min(100cqw, 100cqh)!important}
 #f2[data-ad="1"][data-state="play"] .ad0,#f2:not([data-ad="1"])[data-state="play"] .ad1{display:none!important}
 /* Instagram story ads: the Flick is the story itself, under the story bars, tappable in place */
 #f1[data-state="ad"] .media .mi{pointer-events:auto}
@@ -1082,7 +1085,7 @@ addEventListener(&#x27;wheel&#x27;,function(e){parent.postMessage({type:&#x27;fl
         <div class="rl-meta"><span class="av" style="background:#b5446e">M</span><span class="nm"><b>Maya Collins<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
       </div></div>
       <div><div class="rl-box"><div class="rl-frame">
-        <div class="rl-catch"></div>
+        <div class="rl-catch nk"></div><div class="rl-catch nk2"></div>
         <div class="rl-rail"><span><i data-ic="like"></i>48.2K</span><span><i data-ic="comment"></i>612</span><span><i data-ic="share"></i>731</span><span><i data-ic="bookmark"></i>9.1K</span><span><i data-ic="more"></i></span></div>
       </div>
         <div class="rl-meta"><span class="av" style="background:#8a6a2f">L</span><span class="nm"><b>Luna Jewelry<i data-ic="globe"></i></b><small>Sponsored</small></span><span class="rl-follow">Follow</span></div>
@@ -1443,6 +1446,7 @@ function place(s, r, clip) {
   const m = s.media.style;
   m.left = r.x + 'px'; m.top = r.y + 'px'; m.width = r.w + 'px'; m.height = r.h + 'px';
   m.clipPath = 'inset(' + (clip ? clip[0] : 0) + 'px 0px ' + (clip ? clip[1] : 0) + 'px 0px)';
+  if (s.kind === 'reels') m.clipPath = 'none';   // the reels above and below ride along outside the frame; the phone screen trims them
 }
 function slotGeo(s) {
   if (s.kind === 'story') s.slot = s.el.querySelector(s.adIdx ? '[data-slot-a1]' : '[data-slot]');
@@ -1585,7 +1589,7 @@ function reply(s) {
 function reelSet(s, n) {
   s.reelIdx = n; s.el.dataset.reel = String(n);
   s.rtracks.forEach(t => { t.style.transform = 'translateY(-' + n * 100 + '%)'; });
-  s.reels.forEach((m, j) => m.classList.toggle('on', j === n));
+  s.reels.forEach((m, j) => { m.classList.toggle('on', j === n); m.style.transform = j === n ? '' : 'translateY(calc(' + (j - n) + ' * (100% + var(--sbh))))'; });
   s.el.querySelectorAll('[data-reel-go]').forEach(b => b.classList.toggle('on', +b.dataset.reelGo === n));
 }
 function reelGo(s, n) {
@@ -1956,7 +1960,37 @@ addEventListener('wheel', e => {
 }, { passive: true });
 let tY = null, tX = 0, tT = 0, tEl = null;
 addEventListener('touchstart', e => { const t = e.touches[0]; tY = t.clientY; tX = t.clientX; tT = Date.now(); tEl = e.target; }, { passive: true });
+// Reels on a touch screen: the reel moves with the finger; on release it goes to the next reel or settles back.
+let rd = null;
+function reelTrack(s, px, live) {
+  s.rtracks.forEach(t => { t.style.transition = live ? 'none' : ''; t.style.transform = 'translateY(calc(-' + s.reelIdx * 100 + '% + ' + px.toFixed(1) + 'px))'; });
+}
+addEventListener('touchstart', e => {
+  rd = null;
+  const s = current, el = e.target;
+  if (!s || s.kind !== 'reels' || e.touches.length !== 1 || !(el.closest && el.closest('.screen')) || el.closest('.fb-dock')) return;
+  const t = e.touches[0]; rd = { s, y: t.clientY, x: t.clientX, t: Date.now(), dy: 0, dir: '' };
+}, { passive: true });
+addEventListener('touchmove', e => {
+  if (!rd) return; const t = e.touches[0], dy = t.clientY - rd.y, dx = t.clientX - rd.x, s = rd.s;
+  if (!rd.dir) { if (Math.abs(dy) < 8 && Math.abs(dx) < 8) return; rd.dir = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x'; }
+  if (rd.dir !== 'y') return;
+  const edge = (dy > 0 && s.reelIdx === 0) || (dy < 0 && s.reelIdx === s.reels.length - 1);   // nothing further that way: the reel resists
+  rd.dy = edge ? dy * .22 : dy;
+  s.el.classList.remove('peek'); reelTrack(s, rd.dy, true);
+}, { passive: true });
+function reelDrop(e) {
+  if (!rd) return; const d = rd, s = d.s; rd = null;
+  if (d.dir !== 'y' || s !== current) { if (d.dir === 'y') reelSet(s, s.reelIdx); return; }
+  const quick = Date.now() - d.t < 320, need = quick ? 28 : s.screen.clientHeight * .16;
+  s.rtracks.forEach(t => { t.style.transition = ''; });
+  const moved = e.type !== 'touchcancel' && Math.abs(d.dy) > need && reelGo(s, s.reelIdx + (d.dy < 0 ? 1 : -1));
+  if (!moved) reelSet(s, s.reelIdx);   // settle back
+  else { navd = true; if (!hasNext() && typeof fjHint === 'function') setTimeout(fjHint, 1500); }
+}
+addEventListener('touchend', reelDrop, { passive: true }); addEventListener('touchcancel', reelDrop, { passive: true });
 addEventListener('touchend', e => {
+  if (current && current.kind === 'reels') { tY = null; return; }   // Reels handles its own touches above
   if (tY == null) return; const t = e.changedTouches[0]; const dy = tY - t.clientY, dx = tX - t.clientX, el = tEl; tY = null;
   if (Date.now() - tT > 900 || Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
   if (el && el.closest && el.closest('.mhead,.fmtlist')) return;
@@ -1979,7 +2013,7 @@ addEventListener('pointerup', e => {
 // gestures reported by the videos that run inside the page (the ad tags)
 addEventListener('message', e => {
   const d = e.data; if (!d || d.type !== 'flick-gesture') return;
-  if (typeof d.swipe === 'number') { gestureShow(d.swipe > 0 ? 1 : -1); return; }
+  if (typeof d.swipe === 'number') { if (!rd) gestureShow(d.swipe > 0 ? 1 : -1); return; }
   if (typeof d.wheel === 'number' && !mq.matches) {
     holdWhileMoving();
     const now = Date.now(); if (now < wLock) { wLock = now + 250; return; }
