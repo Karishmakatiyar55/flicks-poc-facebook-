@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Flicks on Meta — Flam interactive video ads demo</title>
+    <meta name="description" content="A live Facebook and Messenger mock-up showing Flam Flicks: tap-to-switch interactive video ads in Feed, Stories, Reels, Marketplace and Messenger." />
+    <meta name="author" content="Flam" />
+    <meta property="og:title" content="Flicks on Meta" />
+    <meta property="og:description" content="Tap-to-switch interactive video ads by Flam, across Facebook Feed, Stories, Reels, Marketplace and Messenger." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#F0F2F5" />
+    <script type="module" crossorigin src="./assets/index-D2uH46OH.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-NiYBwxzp.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      /* Keeps the shared link current. Each time the page opens or comes back into view, it fetches itself
+         fresh from the server; if that copy points at newer app files than this one, it reloads once onto it. */
+      (function () {
+        var last = 0;
+        var own = [].map.call(document.querySelectorAll('script[src^="./assets/"],link[href^="./assets/"]'), function (e) {
+          return e.getAttribute("src") || e.getAttribute("href");
+        });
+        function check() {
+          if (location.protocol === "file:" || !own.length || Date.now() - last < 15000) return;
+          last = Date.now();
+          fetch(location.pathname + "?fresh=" + Date.now(), { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.text() : ""; })
+            .then(function (t) {
+              if (t.indexOf('<div id="root">') < 0) return;
+              for (var i = 0; i < own.length; i++) {
+                if (t.indexOf(own[i]) >= 0) continue;
+                var h = 5381;
+                for (var j = 0; j < t.length; j++) h = ((h << 5) + h + t.charCodeAt(j)) | 0;
+                var v = (h >>> 0).toString(36);
+                if (new URLSearchParams(location.search).get("v") !== v) location.replace(location.pathname + "?v=" + v + location.hash);
+                return;
+              }
+            })
+            .catch(function () {});
+        }
+        check();
+        addEventListener("pageshow", function (e) { if (e.persisted) check(); });
+        document.addEventListener("visibilitychange", function () { if (!document.hidden) check(); });
+      })();
+    </script>
+  </body>
+</html>

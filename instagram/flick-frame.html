@@ -1,0 +1,100 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head>
+<body>
+<script>
+/* AUDIO GUARD: silent unless the host page (same origin, our parent) says this Flick may be audible.
+   Silenced: every audio/video in the document and vertex-player's shadowRoot is muted and paused (re-enforced),
+   and every AudioContext is suspended. Re-allowed: restores exactly the state recorded before silencing. */
+(function(){
+  var allowed=false,saved=new Map(),ctxs=[],ctxSaved=new Map();
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(AC){var W=function(a,b){var c=arguments.length>1?new AC(a,b):arguments.length?new AC(a):new AC();ctxs.push(c);if(!allowed)silence();return c;};W.prototype=AC.prototype;var res0=AC.prototype.resume;AC.prototype.resume=function(){if(!allowed){if(ctxSaved.has(this))ctxSaved.set(this,'running');return Promise.resolve();}return res0.apply(this,arguments);};try{Object.setPrototypeOf(W,AC);}catch(e){}window.AudioContext=W;if(window.webkitAudioContext)window.webkitAudioContext=W;}
+  /* The player keeps its video elements detached from the DOM, so every media element is tracked when created or played. */
+  var known=new Set(),MP=HTMLMediaElement.prototype,play0=MP.play,ce=document.createElement;
+  document.createElement=function(t){var el=ce.apply(document,arguments);if(el instanceof HTMLMediaElement)known.add(el);return el;};
+  MP.play=function(){known.add(this);if(!allowed){if(!saved.has(this))saved.set(this,{muted:this.muted,paused:false});return Promise.resolve();}return play0.apply(this,arguments);};
+  if(window.Audio){var A0=window.Audio;window.Audio=function(s){var a=new A0(s);known.add(a);return a;};window.Audio.prototype=A0.prototype;}
+  function media(){var out=[].slice.call(document.querySelectorAll('audio,video'));known.forEach(function(m){if(out.indexOf(m)<0)out.push(m);});(function walk(root){[].forEach.call(root.querySelectorAll('*'),function(el){if(el.shadowRoot){out.push.apply(out,[].slice.call(el.shadowRoot.querySelectorAll('audio,video')));walk(el.shadowRoot);}});})(document);return out;}
+  function silence(){
+    media().forEach(function(m){if(!saved.has(m))saved.set(m,{muted:m.muted,paused:m.paused});if(!m.muted)m.muted=true;if(!m.paused)try{m.pause();}catch(e){}});
+    ctxs.forEach(function(c){if(!ctxSaved.has(c))ctxSaved.set(c,c.state);if(c.state==='running')c.suspend().catch(function(){});});
+  }
+  function restore(){
+    saved.forEach(function(s,m){m.muted=s.muted;if(!s.paused){var p=play0.call(m);if(p&&p.catch)p.catch(function(){});}});saved.clear();
+    ctxSaved.forEach(function(st,c){if(st==='running')res0.call(c).catch(function(){});});ctxSaved.clear();
+  }
+  window.__flickAudio={audible:function(){return allowed;},contexts:ctxs,media:media};
+  setInterval(function(){if(!allowed)silence();},100);
+  document.addEventListener('play',function(){if(!allowed)silence();},true);
+  window.addEventListener('message',function(e){
+    if(e.origin!==location.origin||e.source!==parent)return;var d=e.data;
+    if(!d||d.source!=='flick-host'||d.type!=='audible')return;
+    var next=!!d.audible;if(next===allowed)return;allowed=next;if(allowed)restore();else silence();
+  });
+})();
+</script>
+<script>
+(function(){
+  var id=new URLSearchParams(location.search).get('id')||'';
+  if(!/^[a-z0-9]{4,12}$/.test(id))return;
+  /* Explicit allowlist of Flicks served from other hosts; script URLs are never built from query input for these. */
+  var ALT={cayman:{prelude:'exitapi',src:'https://native-ads.appless.workers.dev/6aa776159846b99b24d49ce4_m1ugyq/ad.js'}};
+  var alt=Object.prototype.hasOwnProperty.call(ALT,id)?ALT[id]:null;
+  if(alt&&alt.prelude==='exitapi'){window.ExitApi=window.ExitApi||{exit:function(){}};window.clickTag="${CLICK_URL_UNESC}";}
+  else{window.clickTag="${CLICK_URL}";window.AD_CONFIG=window.AD_CONFIG||{};window.AD_CONFIG.dsp="dv360_3p";window.AD_CONFIG.macros={"publisher_id":"${PUBLISHER_ID}","universal_site_id":"${UNIVERSAL_SITE_ID}","exchange_id":"${EXCHANGE_ID}","app_bundle":"${BUNDLE_ID}","adsxt_publisher_id":"${ADSXT_PUBLISHER_ID}","adsxt_ad_system_domain":"${ADSXT_AD_SYSTEM_DOMAIN}","adstxt_ad_system_domain":"${ADSTXT_AD_SYSTEM_DOMAIN}","dsp_line_item_id":"${CAMPAIGN_ID}","dsp_insertion_order_id":"${INSERTION_ORDER_ID}","dsp_creative_id":"${CREATIVE_ID}","inventory_source_id":"${INVENTORY_SOURCE_EXTERNAL_ID}","auction_id":"${AUCTION_ID}","impression_id":"${IMPRESSION_ID}","geo_dma":"${GEO_DMA}","gdpr":"${GDPR}","source_url":"${SOURCE_URL}","source_url_enc":"${SOURCE_URL_ENC}"};window.AD_CONFIG.clickTracker={"mode":"clicktag","template":""};}
+  function post(type,detail){try{parent.postMessage({source:'flick',id:id,type:type,detail:detail||null},location.origin);}catch(e){}}
+  var EV=['vertex-ready','vertex-error','vertex-diff-change','vertex-scene-change','vertex-cta'];
+  function hook(el){if(el.__hooked)return;el.__hooked=1;EV.forEach(function(n){el.addEventListener(n,function(e){var o=null;try{o=JSON.parse(JSON.stringify(e.detail||{}));}catch(_){}post(n,o);});});}
+  new MutationObserver(function(){var el=document.querySelector('vertex-player');if(el)hook(el);}).observe(document.documentElement,{childList:true,subtree:true});
+  document.write('<script src="'+(alt?alt.src:'https://flicks.flamapp.live/'+id+'/ad.js')+'"><\/script>');
+})();
+</script>
+<script>
+/* PATCHES: per-flickId edits of the player's OWN controls in vertex-player's open shadowRoot.
+   cta:true    hides the player's own CTA (text buttons that are not .vx-swatch); the Instagram UI owns the CTA.
+   sound:{...} repositions the small (<=44px) text-less sound button.
+   picker:'..' CSS transform for .vx-picker to close the gap a hidden CTA leaves.
+   Variant switchers (.vx-swatch) and the sound button are never hidden. Re-applied whenever the shadow DOM changes. */
+(function(){
+  var PATCHES={
+    cayman:{cta:true,sound:{top:'12px',right:'12px',bottom:'auto',left:'auto'}}, // Cayman Islands: own Book Now hidden; sound was covering the 3rd thumbnail
+    gwhttp:{cta:true},
+    vq0vp6:{cta:true,sound:{top:'12px',right:'12px',bottom:'auto',left:'auto'}}, // Under Armour: sound was covering the 3rd thumbnail
+    tzed9x:{cta:true},
+    typxqe:{cta:true},
+    sfb39l:{cta:true,sound:{top:'62px',left:'12px',bottom:'auto',right:'auto'}}, // Gucci: sound clear of our reel rail
+    d81eio:{cta:true},
+    yux3w1:{cta:true,picker:'translateY(40px)'}, // Samsung: Buy Now sat under the thumbnail column
+    um792g:{cta:true},
+    ccheju:{cta:true,sound:{top:'12px',right:'12px',bottom:'auto',left:'auto'}} // General Mills: sound was covering the 3rd thumbnail
+  };
+  var id=new URLSearchParams(location.search).get('id')||'';
+  var REEL_LEFT={sfb39l:1,cx5dwz:1,typxqe:{sound:{top:'62px',right:'12px',bottom:'auto',left:'auto'}}}; // Zara reel: sound sat under our Share icon
+  var reel=new URLSearchParams(location.search).get('slot')==='reel';
+  var p=PATCHES[id]||{};if(!PATCHES[id]&&!(reel&&REEL_LEFT[id]))return;
+  if(reel&&REEL_LEFT[id]&&REEL_LEFT[id].sound)p=Object.assign({},p,{sound:REEL_LEFT[id].sound});
+  function set(el,k,v){if(el.style.getPropertyValue(k)!==v||el.style.getPropertyPriority(k)!=='important')el.style.setProperty(k,v,'important');}
+  function apply(sr){
+    var bare=[];
+    [].forEach.call(sr.querySelectorAll('button,a'),function(b){
+      if(b.classList.contains('vx-swatch'))return;
+      var text=(b.textContent||'').trim();
+      if(text){if(p.cta)set(b,'display','none');return;}
+      bare.push(b);
+    });
+    /* The sound button is the LAST small text-less control; some players' unclassed thumbnails come before it. */
+    var b=bare[bare.length-1];
+    if(p.sound&&b&&!b.className&&b.offsetWidth&&b.offsetWidth<=44&&b.offsetHeight<=44)for(var k in p.sound)set(b,k,p.sound[k]);
+    /* Reels only (?slot=reel): the switcher becomes a vertical column at the centre-left edge, clear of the reel rail and caption. */
+    if(reel&&REEL_LEFT[id]){var rp=sr.querySelector('.vx-picker');if(rp){var L={position:'absolute',left:'12px',top:'50%',right:'auto',bottom:'auto',transform:'translateY(-50%)',display:'flex','flex-direction':'column',gap:'10px',width:'auto',height:'auto',margin:'0'};for(var q in L)set(rp,q,L[q]);}}
+    if(p.picker){var pk=sr.querySelector('.vx-picker');if(pk)set(pk,'transform',p.picker);}
+  }
+  var watched=null;
+  new MutationObserver(function(){var el=document.querySelector('vertex-player');var sr=el&&el.shadowRoot;if(!sr)return;
+    apply(sr);if(watched!==sr){watched=sr;new MutationObserver(function(){apply(sr);}).observe(sr,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});}
+  }).observe(document.documentElement,{childList:true,subtree:true,attributes:true});
+  setInterval(function(){var el=document.querySelector('vertex-player');if(el&&el.shadowRoot)apply(el.shadowRoot);},500);
+})();
+</script>
+</body></html>
